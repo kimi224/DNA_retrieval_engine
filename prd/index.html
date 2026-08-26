@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DNA Retrieval Engine 批量错配容错检索引擎展示原型">
+  <title>DNA Retrieval Engine · Run workspace</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+</head>
+<body class="run-page">
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+        <div>
+          <div class="brand-name">NEXUS</div>
+          <div class="brand-product">DNA RETRIEVAL ENGINE</div>
+        </div>
+      </div>
+      <div class="topbar-context"><strong>运行工作台</strong></div>
+      <div class="topbar-meta">
+        <span class="workspace-status"><i data-lucide="circle-check" aria-hidden="true"></i> 本地工作区</span>
+        <button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-toast="帮助面板将在 pywebview 版本中打开"><i data-lucide="circle-help" aria-hidden="true"></i></button>
+        <button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单" data-toast="当前用户：课程设计实验室">DS</button>
+      </div>
+    </header>
+
+    <div class="workspace-grid">
+      <aside class="control-sidebar" aria-label="运行参数">
+        <div class="sidebar-heading">
+          <div>
+            <div class="eyebrow">项目</div>
+            <h1>错配容错检索</h1>
+          </div>
+          <button class="icon-button subtle" type="button" title="更多项目操作" aria-label="更多项目操作" data-toast="项目操作菜单将在 pywebview 版本中打开"><i data-lucide="ellipsis" aria-hidden="true"></i></button>
+        </div>
+
+        <div class="project-select">
+          <div class="project-icon"><i data-lucide="dna" aria-hidden="true"></i></div>
+          <div class="project-select-text">
+            <strong>Task X / chr-demo-01</strong>
+            <span>课程设计 · 本地项目</span>
+          </div>
+          <i class="select-chevron" data-lucide="chevron-down" aria-hidden="true"></i>
+        </div>
+
+        <nav class="side-pages" aria-label="工作区页面">
+          <div class="section-label-row"><span class="section-label">工作区页面</span><span class="section-meta">4 个视图</span></div>
+          <a class="side-page is-active" href="index.html" aria-current="page"><span class="side-page-icon"><i data-lucide="play-circle" aria-hidden="true"></i></span><span><strong>运行工作台</strong></span><i class="side-page-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a>
+          <a class="side-page" href="pages/index-state.html"><span class="side-page-icon"><i data-lucide="database-zap" aria-hidden="true"></i></span><span><strong>索引状态</strong></span><i class="side-page-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a>
+          <a class="side-page" href="pages/reads.html"><span class="side-page-icon"><i data-lucide="list-tree" aria-hidden="true"></i></span><span><strong>Reads 列表 <b>50</b></strong></span><i class="side-page-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a>
+          <a class="side-page" href="pages/report.html"><span class="side-page-icon"><i data-lucide="file-chart-column" aria-hidden="true"></i></span><span><strong>运行报告</strong></span><i class="side-page-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a>
+        </nav>
+
+        <section class="control-section">
+          <div class="section-label-row"><span class="section-label">输入数据</span><span class="section-meta">2 个文件</span></div>
+          <label class="field-label" for="reference-input">参考基因组</label>
+          <div class="file-field" id="reference-input" role="button" tabindex="0" data-toast="示例参考基因组已加载">
+            <i data-lucide="file-code-2" aria-hidden="true"></i>
+            <span><strong>chr-demo-01.fa</strong><small>3,200 bp · 已加载</small></span>
+            <i class="file-check" data-lucide="check" aria-hidden="true"></i>
+          </div>
+          <label class="field-label" for="reads-input">Read 批次</label>
+          <div class="file-field" id="reads-input" role="button" tabindex="0" data-toast="示例 Reads 已加载">
+            <i data-lucide="files" aria-hidden="true"></i>
+            <span><strong>reads_batch_01.fq</strong><small>50 条 Reads · 平均 30 bp</small></span>
+            <i class="file-check" data-lucide="check" aria-hidden="true"></i>
+          </div>
+        </section>
+
+        <section class="control-section parameter-section">
+          <div class="section-label-row"><span class="section-label">检索参数</span><span class="section-meta">手写索引</span></div>
+          <div class="parameter-row">
+            <div><label class="field-label" for="kmer-input">K-mer 长度</label><small class="field-help">作为种子的前缀长度</small></div>
+            <div class="stepper" aria-label="K-mer length">
+              <button class="stepper-button" type="button" data-step-target="kmer" data-step="-1" title="减小 K-mer"><i data-lucide="minus" aria-hidden="true"></i></button>
+              <output id="kmer-output" class="stepper-value">6</output>
+              <button class="stepper-button" type="button" data-step-target="kmer" data-step="1" title="增大 K-mer"><i data-lucide="plus" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <div class="parameter-row">
+            <div><label class="field-label" for="mismatch-range">最大错配数</label><small class="field-help">汉明距离阈值</small></div>
+            <div class="range-wrap"><output id="mismatch-output">2</output><input id="mismatch-range" type="range" min="0" max="3" value="2" step="1" aria-label="最大错配数"></div>
+          </div>
+          <label class="toggle-row" for="prune-toggle">
+            <span><strong>提前剪枝</strong><small>超过阈值后立即退出</small></span>
+            <input id="prune-toggle" type="checkbox" checked>
+            <span class="toggle-ui" aria-hidden="true"></span>
+          </label>
+        </section>
+
+        <div class="sidebar-run">
+          <button class="primary-button" id="run-button" type="button"><i data-lucide="play" aria-hidden="true"></i><span>运行批量检索</span><kbd>⌘ ↵</kbd></button>
+          <div class="run-status" aria-live="polite"><span class="status-dot"></span><span id="run-status-text">索引就绪 · 上次耗时 18.4 ms</span></div>
+        </div>
+
+        <div class="sidebar-footer">
+          <span><i data-lucide="shield-check" aria-hidden="true"></i> 仅本地</span>
+          <span>原型 v0.1</span>
+        </div>
+      </aside>
+
+      <main class="main-workspace">
+        <div class="workspace-header">
+          <div>
+            <div class="breadcrumb"><span>运行</span><i data-lucide="chevron-right" aria-hidden="true"></i><span>参考序列比对</span></div>
+            <div class="title-line"><h2>参考基因组比对</h2><span class="live-pill"><span class="live-dot"></span> 已就绪</span></div>
+            <p class="workspace-subtitle">在统一坐标系中检查 <code>chr-demo-01</code> 的容错命中结果。</p>
+          </div>
+          <div class="header-actions">
+            <button class="secondary-button" type="button" data-toast="导出报告功能预留给 pywebview 版本"><i data-lucide="download" aria-hidden="true"></i> Export</button>
+            <button class="icon-button" type="button" title="更多视图选项" aria-label="更多视图选项" data-toast="视图选项菜单将在 pywebview 版本中打开"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></button>
+          </div>
+        </div>
+
+        <section class="metric-strip" aria-label="检索摘要">
+            <div class="metric"><span class="metric-label">读取片段</span><strong>50</strong><span class="metric-note">batch_01 · 批次</span></div>
+          <div class="metric"><span class="metric-label">容错命中</span><strong id="hit-count">47</strong><span class="metric-note positive"><i data-lucide="arrow-up-right" aria-hidden="true"></i> 94.0% 命中率</span></div>
+          <div class="metric"><span class="metric-label">候选剪枝</span><strong>92.1<span class="metric-unit">%</span></strong><span class="metric-note">提前退出已开启</span></div>
+          <div class="metric"><span class="metric-label">最近耗时</span><strong>18.4<span class="metric-unit">ms</span></strong><span class="metric-note">本地 · 3,195 个窗口</span></div>
+        </section>
+
+        <section class="visual-panel" aria-labelledby="overview-heading">
+          <div class="panel-heading">
+              <div><span class="eyebrow">概览</span><h3 id="overview-heading">参考基因组坐标图</h3></div>
+            <div class="panel-tools"><div class="overview-scale-control"><button class="icon-button subtle" type="button" id="overview-zoom-out" title="缩小坐标图" aria-label="缩小坐标图"><i data-lucide="minus" aria-hidden="true"></i></button><span id="overview-zoom-label">1×</span><button class="icon-button subtle" type="button" id="overview-zoom-in" title="放大坐标图" aria-label="放大坐标图"><i data-lucide="plus" aria-hidden="true"></i></button></div><span class="coordinate-readout" id="coordinate-readout">chr-demo-01 : 400–470</span><button class="icon-button subtle" type="button" title="复制坐标" aria-label="复制坐标" data-toast="坐标已复制到剪贴板（原型）"><i data-lucide="copy" aria-hidden="true"></i></button></div>
+          </div>
+          <div class="overview-scroll" id="overview-scroll"><div class="overview-map" id="overview-map">
+            <div class="map-label">参考序列</div>
+            <div class="map-track" id="map-track"><div class="map-axis"><span>0</span><span>800</span><span>1,600</span><span>2,400</span><span>3,200 bp</span></div><div class="genome-line"></div><div class="window-viewport" id="window-viewport" role="slider" aria-label="滑动参考序列窗口" tabindex="0"></div></div>
+            <div class="map-label">命中区域</div>
+            <div class="map-track hit-track" id="hit-track"><div class="genome-line"></div></div>
+          </div></div>
+          <div class="window-control"><span class="window-control-label">滑动窗口</span><input id="window-range" type="range" min="0" max="3130" value="400" step="1" aria-label="参考序列窗口起点"><output id="window-range-value">400–470</output><span class="window-control-help">拖动蓝色窗口查看不同位置</span></div>
+          <div class="overview-legend"><span><i class="legend-swatch hit"></i> 容错命中</span><span><i class="legend-swatch selected"></i> 当前选中</span><span><i class="legend-swatch mismatch"></i> 错配碱基</span><span class="overview-hint"><i data-lucide="mouse-pointer-2" aria-hidden="true"></i> 点击命中查看详情</span></div>
+        </section>
+
+        <section class="visual-panel alignment-panel" aria-labelledby="alignment-heading">
+          <div class="panel-heading alignment-heading">
+            <div><span class="eyebrow">比对沙盘</span><h3 id="alignment-heading">Read 与参考序列比对</h3></div>
+            <div class="alignment-tools">
+              <div class="zoom-control"><button class="icon-button subtle" type="button" id="zoom-out" title="缩小序列视图" aria-label="缩小序列视图"><i data-lucide="zoom-out" aria-hidden="true"></i></button><span id="zoom-label">1×</span><button class="icon-button subtle" type="button" id="zoom-in" title="放大序列视图" aria-label="放大序列视图"><i data-lucide="zoom-in" aria-hidden="true"></i></button></div>
+              <button class="icon-button subtle" type="button" id="center-view" title="回到选中命中" aria-label="回到选中命中"><i data-lucide="locate-fixed" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <div class="sequence-toolbar">
+            <div class="sequence-location"><span class="location-badge">区域</span><strong id="window-location">chr-demo-01:400-470</strong><span class="location-muted" id="window-size-label">70 bp 窗口</span></div>
+            <div class="sequence-legend"><span><i class="legend-chip ref-chip"></i> 参考序列</span><span><i class="legend-chip mismatch-chip"></i> 容错错配</span></div>
+          </div>
+          <div class="alignment-scroll zoom-1" id="alignment-scroll">
+            <div class="ruler-row"><div class="row-label">位置</div><div class="position-ruler" id="position-ruler"></div><div class="row-score">状态</div></div>
+            <div class="reference-row"><div class="row-label"><strong>参考序列</strong><small>chr-demo-01</small></div><div class="reference-sequence sequence" id="reference-sequence"></div><div class="row-score"><span class="status-label neutral">参考序列</span></div></div>
+            <div class="alignment-divider"></div>
+            <div class="read-list" id="read-list"></div>
+          </div>
+          <div class="alignment-footer"><span id="alignment-summary"><i data-lucide="info" aria-hidden="true"></i> 当前窗口显示 6 条匹配 · 点击行查看详情</span><a class="text-button" href="pages/reads.html">查看全部 Reads <i data-lucide="arrow-right" aria-hidden="true"></i></a></div>
+        </section>
+
+      </main>
+
+      <aside class="inspector" aria-label="命中详情">
+        <div class="inspector-header"><div><span class="eyebrow">命中详情</span><h2 id="inspector-title">READ-024</h2></div><button class="icon-button subtle" type="button" title="关闭详情" aria-label="关闭详情" data-toast="详情面板在原型中保持固定"><i data-lucide="panel-right-close" aria-hidden="true"></i></button></div>
+        <div class="inspector-status"><span class="status-dot"></span><strong id="inspector-status">容错命中</strong><span id="inspector-position">位置 412</span></div>
+        <div class="distance-block"><div class="distance-head"><span>汉明距离</span><strong id="distance-value">2 / 2</strong></div><div class="distance-bar"><span id="distance-fill" style="width: 68%"></span></div><div class="distance-scale"><span>0 完全一致</span><span>允许范围</span><span>&gt; 2 拒绝</span></div></div>
+        <div class="inspector-section"><span class="section-label">Read 序列</span><div class="inspector-sequence" id="inspector-sequence"></div><div class="sequence-note"><span>30 bp</span><span id="inspector-mismatch-count">2 个错配碱基</span></div></div>
+        <div class="inspector-section"><span class="section-label">查找路径</span><dl class="trace-list"><div><dt>种子前缀</dt><dd><code id="trace-seed">ATCGAT</code></dd></div><div><dt>哈希桶</dt><dd id="trace-bucket">#0842</dd></div><div><dt>候选位置</dt><dd id="trace-candidates">6 个位置</dd></div><div><dt>比较字符</dt><dd id="trace-compared">30 / 30</dd></div><div><dt>已剪枝</dt><dd id="trace-pruned">4 次提前退出</dd></div></dl></div>
+        <div class="inspector-section mismatch-section"><div class="section-label-row"><span class="section-label">错配碱基</span><label class="mini-toggle"><input id="mismatch-toggle" type="checkbox" checked><span>显示</span></label></div><div class="mismatch-list" id="mismatch-list"></div></div>
+        <div class="inspector-actions"><button class="secondary-button full-button" type="button" id="copy-result"><i data-lucide="copy" aria-hidden="true"></i> 复制命中摘要</button><button class="text-button full-text-button" type="button" data-toast="将在 pywebview 版本中打开算法追踪器">打开算法追踪 <i data-lucide="arrow-up-right" aria-hidden="true"></i></button></div>
+        <div class="inspector-footnote"><i data-lucide="lock-keyhole" aria-hidden="true"></i><span>所有数据都保留在本地原型中。<br>接入 Python bridge 后可替换样例结果。</span></div>
+      </aside>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>

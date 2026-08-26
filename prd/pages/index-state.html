@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DNA Retrieval Engine 索引状态">
+  <title>索引状态 · DNA Retrieval Engine</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../pages.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+</head>
+<body>
+  <div class="secondary-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+        <div><div class="brand-name">NEXUS</div><div class="brand-product">DNA RETRIEVAL ENGINE</div></div>
+      </div>
+      <div class="topbar-context"><strong>索引状态</strong></div>
+      <div class="topbar-meta"><span class="workspace-status"><i data-lucide="circle-check" aria-hidden="true"></i> 本地工作区</span><button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-toast="帮助面板将在 pywebview 版本中打开"><i data-lucide="circle-help" aria-hidden="true"></i></button><button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单">DS</button></div>
+    </header>
+    <div class="secondary-grid">
+      <aside class="page-sidebar" aria-label="工作区页面">
+        <div class="page-project"><div class="project-icon"><i data-lucide="dna" aria-hidden="true"></i></div><div><strong>Task X / chr-demo-01</strong><small>课程设计 · 本地项目</small></div></div>
+        <nav class="page-nav">
+          <div class="page-nav-label">工作区页面</div>
+          <a href="../index.html"><span class="page-nav-icon"><i data-lucide="play-circle" aria-hidden="true"></i></span><span><strong>运行工作台</strong></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a>
+          <a class="is-active" href="index-state.html" aria-current="page"><span class="page-nav-icon"><i data-lucide="database-zap" aria-hidden="true"></i></span><span><strong>索引状态</strong></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a>
+          <a href="reads.html"><span class="page-nav-icon"><i data-lucide="list-tree" aria-hidden="true"></i></span><span><strong>Reads 列表 <b>50</b></strong></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a>
+          <a href="report.html"><span class="page-nav-icon"><i data-lucide="file-chart-column" aria-hidden="true"></i></span><span><strong>运行报告</strong></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a>
+        </nav>
+        <div class="page-side-note"><strong><i data-lucide="shield-check" aria-hidden="true"></i> 手写数据结构模式</strong><span>拉链法哈希表 + 单链表位置集合</span><span>连续字符数组 · 3,200 bp</span></div>
+      </aside>
+      <main class="page-main">
+        <div class="page-main-header">
+          <div><div class="page-breadcrumb"><span>工作区</span><i data-lucide="chevron-right" aria-hidden="true"></i><span>索引状态</span></div><h1>索引状态</h1><p class="page-lede">查看参考基因组的手写 K-mer 拉链法哈希索引是否构建完整。</p></div>
+          <div class="page-actions"><button class="secondary-button" type="button" data-toast="索引已经是最新状态"><i data-lucide="refresh-cw" aria-hidden="true"></i> 检查更新</button><button class="primary-button page-action-primary" type="button" data-toast="重建索引功能将在 pywebview 版本中接入"><i data-lucide="hammer" aria-hidden="true"></i> 重建索引</button></div>
+        </div>
+
+        <section class="page-section">
+          <div class="page-stat-grid"><div class="page-stat"><span class="page-stat-label">K-MER 长度</span><strong>6</strong><span class="page-stat-note">种子窗口 · 1 bp 步长</span></div><div class="page-stat"><span class="page-stat-label">索引窗口</span><strong>3,195</strong><span class="page-stat-note">参考序列 3,200 bp</span></div><div class="page-stat"><span class="page-stat-label">哈希桶</span><strong>1,962</strong><span class="page-stat-note success">已完成 · 无损构建</span></div><div class="page-stat"><span class="page-stat-label">链表节点</span><strong>3,195</strong><span class="page-stat-note">位置记录总数</span></div></div>
+        </section>
+
+        <section class="page-section"><div class="page-section-heading"><h2>构建路径</h2><p>从连续字符数组到可检索位置集合</p></div><div class="split-grid"><div class="page-panel"><div class="page-panel-heading"><div><span class="eyebrow">数据结构</span><h3>手写索引构建流程</h3></div><span class="result-pill">构建完成</span></div><div class="page-panel-body index-flow"><div class="flow-step done"><span class="flow-marker">01</span><span><strong>读取参考基因组</strong><small>连续字符数组 · A / T / C / G</small></span><span class="flow-value">3,200 bp</span></div><div class="flow-step done"><span class="flow-marker">02</span><span><strong>滑动窗口切分 K-mer</strong><small>K=6 · 步长 1 · 覆盖全部窗口</small></span><span class="flow-value">3,195 次</span></div><div class="flow-step done"><span class="flow-marker">03</span><span><strong>写入拉链法哈希表</strong><small>键：K-mer · 值：单链表头节点</small></span><span class="flow-value">1,962 桶</span></div><div class="flow-step done"><span class="flow-marker">04</span><span><strong>索引校验</strong><small>节点数量与窗口数量一致</small></span><span class="flow-value">100%</span></div></div></div><div class="page-panel"><div class="page-panel-heading"><div><span class="eyebrow">桶分布</span><h3>桶分布概览</h3></div><span class="table-caption">前 4 个桶</span></div><div class="page-panel-body"><table class="bucket-table"><thead><tr><th>桶</th><th>链长</th><th>占用</th></tr></thead><tbody><tr><td>#0842</td><td>18 个节点</td><td><div class="bucket-bar"><span style="width:88%"></span></div></td></tr><tr><td>#1B90</td><td>13 个节点</td><td><div class="bucket-bar"><span style="width:65%"></span></div></td></tr><tr><td>#03A7</td><td>9 个节点</td><td><div class="bucket-bar"><span style="width:45%"></span></div></td></tr><tr><td>#0C21</td><td>4 个节点</td><td><div class="bucket-bar"><span class="low" style="width:20%"></span></div></td></tr></tbody></table></div></div></div></section>
+
+      </main>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="../pages.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DNA Retrieval Engine Reads 列表">
+  <title>Reads 列表 · DNA Retrieval Engine</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../pages.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+</head>
+<body>
+  <div class="secondary-shell">
+    <header class="topbar">
+      <div class="brand-block"><div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div><div><div class="brand-name">NEXUS</div><div class="brand-product">DNA RETRIEVAL ENGINE</div></div></div>
+      <div class="topbar-context"><strong>Reads 列表</strong><small>READ EXPLORER</small></div>
+      <div class="topbar-meta"><span class="workspace-status"><i data-lucide="circle-check" aria-hidden="true"></i> 本地工作区</span><button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-toast="帮助面板将在 pywebview 版本中打开"><i data-lucide="circle-help" aria-hidden="true"></i></button><button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单">DS</button></div>
+    </header>
+    <div class="secondary-grid">
+      <aside class="page-sidebar" aria-label="工作区页面">
+        <div class="page-project"><div class="project-icon"><i data-lucide="dna" aria-hidden="true"></i></div><div><strong>Task X / chr-demo-01</strong><small>课程设计 · 本地项目</small></div></div>
+        <nav class="page-nav"><div class="page-nav-label">工作区页面 PAGES</div><a href="../index.html"><span class="page-nav-icon"><i data-lucide="play-circle" aria-hidden="true"></i></span><span><strong>运行工作台</strong><small>Run workspace</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a><a href="index-state.html"><span class="page-nav-icon"><i data-lucide="database-zap" aria-hidden="true"></i></span><span><strong>索引状态</strong><small>Index health</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a><a class="is-active" href="reads.html" aria-current="page"><span class="page-nav-icon"><i data-lucide="list-tree" aria-hidden="true"></i></span><span><strong>Reads 列表 <b>50</b></strong><small>Read explorer</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a><a href="report.html"><span class="page-nav-icon"><i data-lucide="file-chart-column" aria-hidden="true"></i></span><span><strong>运行报告</strong><small>Run report</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a></nav>
+        <div class="page-side-note"><strong><i data-lucide="flask-conical" aria-hidden="true"></i> 样例批次</strong><span>50 条 Reads · 平均 30 bp</span><span>3 条完全一致 · 44 条容错命中</span></div>
+      </aside>
+      <main class="page-main">
+        <div class="page-main-header"><div><div class="page-breadcrumb"><span>工作区</span><i data-lucide="chevron-right" aria-hidden="true"></i><span>Reads 列表</span></div><h1>Reads 列表 <small>READ EXPLORER</small></h1><p class="page-lede">逐条查看批量检索输入、种子前缀和 Hamming distance 结果。<span>Review the input reads and their tolerant-match traces.</span></p></div><div class="page-actions"><button class="secondary-button" type="button" data-toast="FASTQ 导入功能将在 pywebview 版本中接入"><i data-lucide="upload" aria-hidden="true"></i> 导入 FASTQ</button><button class="secondary-button" type="button" data-toast="导出当前筛选结果"><i data-lucide="download" aria-hidden="true"></i> 导出列表</button></div></div>
+
+        <section class="page-section"><div class="page-panel"><div class="reads-toolbar"><label class="search-field" for="read-filter"><i data-lucide="search" aria-hidden="true"></i><input id="read-filter" type="search" placeholder="搜索 Read 编号或序列" autocomplete="off"></label><span class="filter-note" id="read-filter-note">显示代表性 10 条 · 共 50 条 Reads</span><span class="result-pill">47 条命中</span></div><div class="reads-table-wrap"><table class="reads-table"><thead><tr><th>READ 编号</th><th>序列 · 30 bp</th><th>种子前缀</th><th>参考位置</th><th>汉明距离</th><th>结果</th></tr></thead><tbody id="reads-table-body"><tr data-read="READ-024"><td>READ-024</td><td><span class="read-string">ATGCT<span class="mismatch-char">C</span>TAGGCTAACG<span class="mismatch-char">C</span>ATCGGATCCTAG</span></td><td><code>ATGCTC</code></td><td>412</td><td>2 / 2</td><td><span class="result-pill">容错命中</span></td></tr><tr data-read="READ-031"><td>READ-031</td><td><span class="read-string">GCTAGGCTAACG<span class="mismatch-char">C</span>ATCGGATCCTAGGCTTA</span></td><td><code>GCTAGG</code></td><td>418</td><td>1 / 2</td><td><span class="result-pill">容错命中</span></td></tr><tr data-read="READ-007"><td>READ-007</td><td><span class="read-string">AACGTATCGGATCCTAGGCTTACGATCGAT</span></td><td><code>AACGTA</code></td><td>426</td><td>0 / 2</td><td><span class="result-pill exact">完全一致</span></td></tr><tr data-read="READ-042"><td>READ-042</td><td><span class="read-string">GG<span class="mismatch-char">A</span>GCC TATCGGATCCTAGGCTTACG<span class="mismatch-char">T</span>AT</span></td><td><code>GGAGCC</code></td><td>434</td><td>2 / 2</td><td><span class="result-pill">容错命中</span></td></tr><tr data-read="READ-018"><td>READ-018</td><td><span class="read-string">TAGGCTTACGATCGATGCAATCGGATCGTA</span></td><td><code>TAGGCT</code></td><td>440</td><td>1 / 2</td><td><span class="result-pill">容错命中</span></td></tr><tr data-read="READ-049"><td>READ-049</td><td><span class="read-string">TAGGCTTAC<span class="mismatch-char">T</span>ATCGATGCAATCGGATCG<span class="mismatch-char">T</span>A</span></td><td><code>TAGGCT</code></td><td>440</td><td>2 / 2</td><td><span class="result-pill">容错命中</span></td></tr><tr data-read="READ-003"><td>READ-003</td><td><span class="read-string">CGTATCGGATCCTAGGCTTACGATCGATG</span></td><td><code>CGTATC</code></td><td>452</td><td>1 / 2</td><td><span class="result-pill">容错命中</span></td></tr><tr data-read="READ-011"><td>READ-011</td><td><span class="read-string">GATCGATGCAATCGGATCGTACCGTATC</span></td><td><code>GATCGA</code></td><td>468</td><td>0 / 2</td><td><span class="result-pill exact">完全一致</span></td></tr><tr data-read="READ-027"><td>READ-027</td><td><span class="read-string">TCGATGCAATCGGATCGTACCGTATCGGA</span></td><td><code>TCGATG</code></td><td>476</td><td>1 / 2</td><td><span class="result-pill">容错命中</span></td></tr><tr data-read="READ-050"><td>READ-050</td><td><span class="read-string">ATCGGATCCTAGGCTTACGATCGATGC</span></td><td><code>ATCGGA</code></td><td>488</td><td>0 / 2</td><td><span class="result-pill exact">完全一致</span></td></tr></tbody></table></div></div></section>
+
+      </main>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="../pages.js"></script>
+</body>
+</html>

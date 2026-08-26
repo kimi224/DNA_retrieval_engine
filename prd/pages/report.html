@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DNA Retrieval Engine 运行报告">
+  <title>运行报告 · DNA Retrieval Engine</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../pages.css">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+</head>
+<body>
+  <div class="secondary-shell">
+    <header class="topbar">
+      <div class="brand-block"><div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div><div><div class="brand-name">NEXUS</div><div class="brand-product">DNA RETRIEVAL ENGINE</div></div></div>
+      <div class="topbar-context"><strong>运行报告</strong><small>RUN REPORT</small></div>
+      <div class="topbar-meta"><span class="workspace-status"><i data-lucide="circle-check" aria-hidden="true"></i> 本地工作区</span><button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-toast="帮助面板将在 pywebview 版本中打开"><i data-lucide="circle-help" aria-hidden="true"></i></button><button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单">DS</button></div>
+    </header>
+    <div class="secondary-grid">
+      <aside class="page-sidebar" aria-label="工作区页面">
+        <div class="page-project"><div class="project-icon"><i data-lucide="dna" aria-hidden="true"></i></div><div><strong>Task X / chr-demo-01</strong><small>课程设计 · 本地项目</small></div></div>
+        <nav class="page-nav"><div class="page-nav-label">工作区页面 PAGES</div><a href="../index.html"><span class="page-nav-icon"><i data-lucide="play-circle" aria-hidden="true"></i></span><span><strong>运行工作台</strong><small>Run workspace</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a><a href="index-state.html"><span class="page-nav-icon"><i data-lucide="database-zap" aria-hidden="true"></i></span><span><strong>索引状态</strong><small>Index health</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a><a href="reads.html"><span class="page-nav-icon"><i data-lucide="list-tree" aria-hidden="true"></i></span><span><strong>Reads 列表 <b>50</b></strong><small>Read explorer</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a><a class="is-active" href="report.html" aria-current="page"><span class="page-nav-icon"><i data-lucide="file-chart-column" aria-hidden="true"></i></span><span><strong>运行报告</strong><small>Run report</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a></nav>
+        <div class="page-side-note"><strong><i data-lucide="file-check-2" aria-hidden="true"></i> 结果已固化</strong><span>运行时间 · 2026-08-26 10:42:18</span><span>报告内容可由 Python bridge 导出</span></div>
+      </aside>
+      <main class="page-main">
+        <div class="page-main-header"><div><div class="page-breadcrumb"><span>工作区</span><i data-lucide="chevron-right" aria-hidden="true"></i><span>运行报告</span></div><h1>运行报告 <small>RUN REPORT</small></h1><p class="page-lede">用一页结果复盘这次高通量错配容错检索。<span>Summarize the completed tolerant-search run.</span></p></div><div class="page-actions"><button class="secondary-button" type="button" data-toast="报告预览已生成"><i data-lucide="printer" aria-hidden="true"></i> 打印预览</button><button class="primary-button page-action-primary" type="button" data-toast="PDF 导出将在 pywebview 版本中接入"><i data-lucide="file-down" aria-hidden="true"></i> 导出 PDF</button></div></div>
+
+        <section class="page-section"><div class="page-stat-grid"><div class="page-stat"><span class="page-stat-label">容错命中</span><strong>47 / 50</strong><span class="page-stat-note success">94.0% · 通过</span></div><div class="page-stat"><span class="page-stat-label">最大错配</span><strong>2 bp</strong><span class="page-stat-note">Hamming distance</span></div><div class="page-stat"><span class="page-stat-label">候选位置</span><strong>312</strong><span class="page-stat-note">经种子过滤</span></div><div class="page-stat"><span class="page-stat-label">运行耗时</span><strong>18.4 ms</strong><span class="page-stat-note">本地 · K=6</span></div></div></section>
+
+        <section class="page-section"><div class="page-section-heading"><h2>运行元数据 <small>RUN METADATA</small></h2><p>可复现实验设置</p></div><div class="report-grid"><div class="page-panel"><div class="page-panel-heading"><div><span class="eyebrow">检索配置</span><h3>本次检索参数</h3></div><span class="result-pill">已完成</span></div><div class="page-panel-body report-list"><div class="report-row"><span>参考基因组</span><strong>chr-demo-01.fa · 3,200 bp</strong></div><div class="report-row"><span>Reads 输入</span><strong>reads_batch_01.fq · 50 条</strong></div><div class="report-row"><span>K-mer 长度</span><strong>6 bp · 步长 1</strong></div><div class="report-row"><span>容错阈值</span><strong>2 个错配</strong></div><div class="report-row"><span>剪枝策略</span><strong>超过阈值立即退出</strong></div><div class="report-row"><span>索引结构</span><strong>拉链法哈希表 + 单链表</strong></div></div></div><div class="page-panel"><div class="page-panel-heading"><div><span class="eyebrow">方法摘要</span><h3>算法执行摘要</h3></div></div><div class="page-panel-body"><div class="method-step"><span class="method-number">01</span><div><strong>提取种子</strong><p>从每条 Read 截取前 6 个碱基，作为哈希表键。</p></div></div><div class="method-step"><span class="method-number">02</span><div><strong>定位候选</strong><p>沿单链表读取该 K-mer 的所有参考位置。</p></div></div><div class="method-step"><span class="method-number">03</span><div><strong>容错比对</strong><p>逐字符计算汉明距离，超过 2 即剪枝。</p></div></div></div></div></div></section>
+
+        <section class="page-section"><div class="page-section-heading"><h2>命中分布 <small>MATCH DISTRIBUTION</small></h2><p>按允许错配数量统计</p></div><div class="page-panel"><div class="distribution"><div class="distribution-item"><div class="distribution-bar"><span style="height: 42%"></span></div><strong>3</strong><small>0 个错配 · 完全一致</small></div><div class="distribution-item"><div class="distribution-bar"><span style="height: 76%"></span></div><strong>21</strong><small>1 个错配</small></div><div class="distribution-item"><div class="distribution-bar"><span style="height: 84%"></span></div><strong>23</strong><small>2 个错配 · 达到阈值</small></div></div><div class="export-note"><i data-lucide="info" aria-hidden="true"></i><span>本报告只展示可解释结果。每条命中都能回到“运行工作台”查看参考序列、Read 序列、候选位置和错配碱基。</span></div></div></section>
+      </main>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="../pages.js"></script>
+</body>
+</html>
