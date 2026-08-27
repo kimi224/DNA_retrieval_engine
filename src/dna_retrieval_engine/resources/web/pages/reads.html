@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DNA Retrieval Engine Reads 列表">
+  <title>Reads 列表 · DNA Retrieval Engine</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../pages.css">
+  <script src="../vendor/lucide.min.js"></script>
+</head>
+<body>
+  <div class="secondary-shell">
+    <header class="topbar">
+      <div class="brand-block"><div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div><div><div class="brand-name">NEXUS</div><div class="brand-product">DNA RETRIEVAL ENGINE</div></div></div>
+      <div class="topbar-context"><strong>Reads 列表</strong><small>READ EXPLORER</small></div>
+      <div class="topbar-meta"><span class="workspace-status"><i data-lucide="circle-check" aria-hidden="true"></i> 本地工作区</span><button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-toast="帮助面板将在 pywebview 版本中打开"><i data-lucide="circle-help" aria-hidden="true"></i></button><button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单">DS</button></div>
+    </header>
+    <div class="secondary-grid">
+      <aside class="page-sidebar" aria-label="工作区页面">
+        <div class="page-project"><div class="project-icon"><i data-lucide="dna" aria-hidden="true"></i></div><div><strong data-project-name>尚未加载数据</strong><small data-project-meta>课程设计 · 本地项目</small></div></div>
+        <nav class="page-nav"><div class="page-nav-label">工作区页面 PAGES</div><a href="../index.html"><span class="page-nav-icon"><i data-lucide="play-circle" aria-hidden="true"></i></span><span><strong>运行工作台</strong><small>Run workspace</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a><a href="index-state.html"><span class="page-nav-icon"><i data-lucide="database-zap" aria-hidden="true"></i></span><span><strong>索引状态</strong><small>Index health</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a><a class="is-active" href="reads.html" aria-current="page"><span class="page-nav-icon"><i data-lucide="list-tree" aria-hidden="true"></i></span><span><strong>Reads 列表 <b data-read-count>0</b></strong><small>Read explorer</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a><a href="report.html"><span class="page-nav-icon"><i data-lucide="file-chart-column" aria-hidden="true"></i></span><span><strong>运行报告</strong><small>Run report</small></span><i class="page-nav-arrow" data-lucide="chevron-right" aria-hidden="true"></i></a></nav>
+        <div class="page-side-note"><strong><i data-lucide="flask-conical" aria-hidden="true"></i> 当前批次</strong><span id="reads-side-summary">尚未加载 Reads</span><span id="reads-side-result">运行检索后显示结果</span></div>
+      </aside>
+      <main class="page-main">
+        <div class="page-main-header"><div><div class="page-breadcrumb"><span>工作区</span><i data-lucide="chevron-right" aria-hidden="true"></i><span>Reads 列表</span></div><h1>Reads 列表 <small>READ EXPLORER</small></h1><p class="page-lede">逐条查看批量检索输入、种子前缀和 Hamming distance 结果。<span>Review the input reads and their tolerant-match traces.</span></p></div><div class="page-actions"><button class="secondary-button" id="go-import-button" type="button"><i data-lucide="upload" aria-hidden="true"></i> 导入 FASTQ</button><button class="secondary-button" id="export-reads-button" type="button" disabled><i data-lucide="download" aria-hidden="true"></i> 导出列表</button></div></div>
+
+        <section class="page-section"><div class="page-panel"><div class="reads-toolbar"><label class="search-field" for="read-filter"><i data-lucide="search" aria-hidden="true"></i><input id="read-filter" type="search" placeholder="搜索 Read 编号或序列" autocomplete="off"></label><span class="filter-note" id="read-filter-note">等待检索结果</span><span class="result-pill" id="reads-result-pill">0 条命中</span></div><div class="reads-table-wrap"><table class="reads-table"><thead><tr><th>READ 编号</th><th>序列 · 50–150 bp</th><th>种子前缀</th><th>参考位置</th><th>汉明距离</th><th>结果</th></tr></thead><tbody id="reads-table-body"><tr><td colspan="6">请先在运行工作台加载数据并运行检索</td></tr></tbody></table></div></div></section>
+
+      </main>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="../bridge-client.js"></script>
+  <script src="../state-store.js"></script>
+  <script src="../pages.js"></script>
+</body>
+</html>

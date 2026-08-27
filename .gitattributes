@@ -1,2 +1,14 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# All repository text is UTF-8 with LF; binary assets are never normalized.
+* text=auto eol=lf
+*.py text working-tree-encoding=UTF-8
+*.js text working-tree-encoding=UTF-8
+*.css text working-tree-encoding=UTF-8
+*.html text working-tree-encoding=UTF-8
+*.json text working-tree-encoding=UTF-8
+*.md text working-tree-encoding=UTF-8
+*.txt text working-tree-encoding=UTF-8
+*.toml text working-tree-encoding=UTF-8
+*.ps1 text working-tree-encoding=UTF-8
+*.spec text working-tree-encoding=UTF-8
+*.ico binary
+*.png binary
