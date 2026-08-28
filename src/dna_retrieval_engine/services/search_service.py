@@ -1,5 +1,6 @@
 """Own the current hand-built index and latest batch result."""
 
+from copy import deepcopy
 from datetime import datetime
 from threading import RLock
 from time import perf_counter
@@ -20,12 +21,16 @@ class SearchService:
         self._index: KmerIndex | None = None
         self._indexed_dataset: LoadedDataset | None = None
         self._last_result: BatchResult | None = None
+        self._index_snapshot: dict[str, Any] | None = None
+        self._last_result_payload: dict[str, Any] | None = None
 
     def clear(self) -> None:
         with self._lock:
             self._index = None
             self._indexed_dataset = None
             self._last_result = None
+            self._index_snapshot = None
+            self._last_result_payload = None
 
     def build_index(self, k: int) -> dict[str, Any]:
         if not K_MIN <= k <= K_MAX:
@@ -34,11 +39,14 @@ class SearchService:
         if dataset is None:
             raise ValueError("请先生成或加载数据集")
         index = KmerIndex.build(dataset.reference, k)
+        snapshot = {"built": True, **index.to_dict()}
         with self._lock:
             self._index = index
             self._indexed_dataset = dataset
             self._last_result = None
-        return index.to_dict()
+            self._index_snapshot = snapshot
+            self._last_result_payload = None
+        return deepcopy(snapshot)
 
     def ensure_index(self, k: int) -> KmerIndex:
         dataset = self.dataset_service.current
@@ -82,17 +90,25 @@ class SearchService:
         )
         with self._lock:
             self._last_result = batch
-        return batch.to_dict()
+            self._last_result_payload = batch.to_dict()
+        return deepcopy(self._last_result_payload)
 
     def index_state(self) -> dict[str, Any]:
         with self._lock:
-            index = self._index
-        return {"built": False} if index is None else {"built": True, **index.to_dict()}
+            snapshot = self._index_snapshot
+        return {"built": False} if snapshot is None else deepcopy(snapshot)
 
     def last_result(self) -> dict[str, Any] | None:
         with self._lock:
-            result = self._last_result
-        return result.to_dict() if result else None
+            payload = self._last_result_payload
+        return deepcopy(payload) if payload else None
+
+    def result_summary(self) -> dict[str, Any] | None:
+        with self._lock:
+            payload = self._last_result_payload
+        if payload is None:
+            return None
+        return {"run_id": payload["run_id"], "summary": deepcopy(payload["summary"])}
 
     def read_detail(self, read_id: str) -> dict[str, Any]:
         result = self.last_result()
