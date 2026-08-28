@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dna-retrieval-engine"
-version = "1.0.0"
+version = "2.0.0"
 description = "A teaching-oriented DNA tolerant retrieval engine"
 requires-python = ">=3.13,<3.14"
 dependencies = [
