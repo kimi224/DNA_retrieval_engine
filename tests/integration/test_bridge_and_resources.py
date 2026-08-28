@@ -43,6 +43,9 @@ def test_frontend_resources_are_offline_and_bridge_aware() -> None:
         web / "app.js",
         web / "bridge-client.js",
         web / "state-store.js",
+        web / "ui-state.js",
+        web / "ui-actions.js",
+        web / "router.js",
         web / "pages" / "index-state.html",
         web / "pages" / "reads.html",
         web / "pages" / "report.html",
@@ -51,12 +54,24 @@ def test_frontend_resources_are_offline_and_bridge_aware() -> None:
     assert all(path.is_file() for path in expected)
     bridge = (web / "bridge-client.js").read_text(encoding="utf-8")
     assert 'addEventListener("pywebviewready"' in bridge
-    assert "get_state" in bridge and "setInterval" in bridge
-    assert "refreshInFlight" in bridge and "pollState" in bridge
+    assert "get_state" in bridge and "setTimeout" in bridge
+    assert "refreshPromise" in bridge and "visibilitychange" in bridge
     for path in [web / "index.html", *(web / "pages").glob("*.html")]:
         html = path.read_text(encoding="utf-8")
         assert "https://" not in html
         assert "bridge-client.js" in html
+
+    desktop_main = (
+        Path(__file__).resolve().parents[2]
+        / "src"
+        / "dna_retrieval_engine"
+        / "desktop"
+        / "main.py"
+    ).read_text(encoding="utf-8")
+    assert "url=str(html_path)" in desktop_main
+    assert "html_path.as_uri()" not in desktop_main
+    assert "http_server=True" in desktop_main
+    assert "maximized=not startup_probe_hidden" in desktop_main
 
 
 def test_prd_baseline_remains_untouched() -> None:

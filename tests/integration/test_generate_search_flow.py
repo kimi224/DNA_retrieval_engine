@@ -19,6 +19,7 @@ def test_generated_dataset_full_flow_and_threshold_monotonicity(tmp_path: Path) 
     assert counts[-1] == 50
     assert len(set(counts)) > 1
     assert all(read["truth_recovered"] for read in result["reads"])
+    assert search.index_state()["built"] is True
     assert search.index_state()["position_node_count"] == 2000 - 12 + 1
 
     exported = ReportService(datasets, search).export(loaded.descriptor.dataset_directory)
