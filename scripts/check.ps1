@@ -7,11 +7,14 @@ $pytest = Join-Path $projectRoot ".venv\Scripts\pytest.exe"
 
 Push-Location $projectRoot
 try {
-    & $ruff check src tests app.py
+    & $ruff check src tests app.py scripts/stress_navigation.py scripts/stress_startup.py
     & $pytest --cov=dna_retrieval_engine --cov-report=term-missing --cov-fail-under=75
     node --check src/dna_retrieval_engine/resources/web/app.js
     node --check src/dna_retrieval_engine/resources/web/pages.js
     node --check src/dna_retrieval_engine/resources/web/bridge-client.js
+    node --check src/dna_retrieval_engine/resources/web/ui-state.js
+    node --check src/dna_retrieval_engine/resources/web/ui-actions.js
+    node --check src/dna_retrieval_engine/resources/web/router.js
 
     $strictUtf8 = [Text.UTF8Encoding]::new($false, $true)
     $textExtensions = @(".py", ".js", ".css", ".html", ".json", ".md", ".txt", ".toml", ".ps1", ".spec")
