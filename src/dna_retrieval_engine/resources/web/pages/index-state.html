@@ -10,7 +10,8 @@
   <link rel="stylesheet" href="../pages.css">
   <script src="../vendor/lucide.min.js"></script>
 </head>
-<body>
+<body class="app-booting">
+  <div class="startup-overlay" id="startup-overlay" role="status" aria-live="polite" aria-label="正在启动应用"><div class="startup-panel"><div class="startup-brand"><div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div><div><strong>NEXUS</strong><span>DNA RETRIEVAL ENGINE</span></div></div><div class="startup-progress" aria-hidden="true"><span id="startup-progress-fill"></span></div><div class="startup-status"><strong id="startup-stage">正在加载本地界面</strong><span id="startup-detail">准备 WebView2 与本地服务</span></div><button class="secondary-button" id="startup-retry" type="button" hidden>重新连接</button></div></div>
   <div class="secondary-shell">
     <header class="topbar">
       <div class="brand-block">
@@ -18,7 +19,7 @@
         <div><div class="brand-name">NEXUS</div><div class="brand-product">DNA RETRIEVAL ENGINE</div></div>
       </div>
       <div class="topbar-context"><strong>索引状态</strong></div>
-      <div class="topbar-meta"><span class="workspace-status"><i data-lucide="circle-check" aria-hidden="true"></i> 本地工作区</span><button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-toast="帮助面板将在 pywebview 版本中打开"><i data-lucide="circle-help" aria-hidden="true"></i></button><button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单">DS</button></div>
+      <div class="topbar-meta"><span class="workspace-status"><i data-lucide="circle-check" aria-hidden="true"></i> 本地工作区</span><button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-ui-action="help"><i data-lucide="circle-help" aria-hidden="true"></i></button><button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单" data-ui-action="user-menu">DS</button></div>
     </header>
     <div class="secondary-grid">
       <aside class="page-sidebar" aria-label="工作区页面">
@@ -35,14 +36,13 @@
       <main class="page-main">
         <div class="page-main-header">
           <div><div class="page-breadcrumb"><span>工作区</span><i data-lucide="chevron-right" aria-hidden="true"></i><span>索引状态</span></div><h1>索引状态</h1><p class="page-lede">查看参考基因组的手写 K-mer 拉链法哈希索引是否构建完整。</p></div>
-          <div class="page-actions"><button class="secondary-button" id="refresh-index-button" type="button"><i data-lucide="refresh-cw" aria-hidden="true"></i> 检查更新</button><button class="primary-button page-action-primary" id="rebuild-index-button" type="button" disabled><i data-lucide="hammer" aria-hidden="true"></i> 重建索引</button></div>
         </div>
 
         <section class="page-section">
           <div class="page-stat-grid"><div class="page-stat"><span class="page-stat-label">K-MER 长度</span><strong id="index-k">—</strong><span class="page-stat-note">种子窗口 · 1 bp 步长</span></div><div class="page-stat"><span class="page-stat-label">索引窗口</span><strong id="index-windows">0</strong><span class="page-stat-note" id="index-reference-note">等待参考序列</span></div><div class="page-stat"><span class="page-stat-label">哈希桶</span><strong id="index-buckets">0</strong><span class="page-stat-note" id="index-bucket-note">尚未构建</span></div><div class="page-stat"><span class="page-stat-label">链表节点</span><strong id="index-nodes">0</strong><span class="page-stat-note" id="index-integrity-note">等待完整性检查</span></div></div>
         </section>
 
-        <section class="page-section"><div class="page-section-heading"><h2>构建路径</h2><p>从连续字符数组到可检索位置集合</p></div><div class="split-grid"><div class="page-panel"><div class="page-panel-heading"><div><span class="eyebrow">数据结构</span><h3>手写索引构建流程</h3></div><span class="result-pill" id="index-status-pill">等待构建</span></div><div class="page-panel-body index-flow"><div class="flow-step"><span class="flow-marker">01</span><span><strong>读取参考基因组</strong><small>连续字符数组 · A / T / C / G</small></span><span class="flow-value" id="flow-reference">—</span></div><div class="flow-step"><span class="flow-marker">02</span><span><strong>滑动窗口切分 K-mer</strong><small id="flow-window-note">步长 1 · 覆盖全部窗口</small></span><span class="flow-value" id="flow-windows">—</span></div><div class="flow-step"><span class="flow-marker">03</span><span><strong>写入拉链法哈希表</strong><small>键：K-mer · 值：单链表头节点</small></span><span class="flow-value" id="flow-buckets">—</span></div><div class="flow-step"><span class="flow-marker">04</span><span><strong>索引校验</strong><small>节点数量与窗口数量一致</small></span><span class="flow-value" id="flow-integrity">等待</span></div></div></div><div class="page-panel"><div class="page-panel-heading"><div><span class="eyebrow">桶分布</span><h3>桶分布概览</h3></div><span class="table-caption">最长前 6 个桶</span></div><div class="page-panel-body"><table class="bucket-table"><thead><tr><th>桶 / K-mer</th><th>冲突链 / 位置节点</th><th>占用</th></tr></thead><tbody id="bucket-table-body"><tr><td colspan="3">建立索引后显示真实桶链统计</td></tr></tbody></table></div></div></div></section>
+        <section class="page-section"><div class="page-section-heading"><h2>构建路径</h2><p>只读展示当前数据集已构建的索引</p></div><div class="split-grid"><div class="page-panel"><div class="page-panel-heading"><div><span class="eyebrow">数据结构</span><h3>手写索引构建流程</h3></div><span class="result-pill" id="index-status-pill">等待构建</span></div><div class="page-panel-body index-flow"><div class="flow-step"><span class="flow-marker">01</span><span><strong>读取参考基因组</strong><small>连续字符数组 · A / T / C / G</small></span><span class="flow-value" id="flow-reference">—</span></div><div class="flow-step"><span class="flow-marker">02</span><span><strong>滑动窗口切分 K-mer</strong><small id="flow-window-note">步长 1 · 覆盖全部窗口</small></span><span class="flow-value" id="flow-windows">—</span></div><div class="flow-step"><span class="flow-marker">03</span><span><strong>写入拉链法哈希表</strong><small>键：K-mer · 值：单链表头节点</small></span><span class="flow-value" id="flow-buckets">—</span></div><div class="flow-step"><span class="flow-marker">04</span><span><strong>索引校验</strong><small>节点数量与窗口数量一致</small></span><span class="flow-value" id="flow-integrity">等待</span></div></div></div><div class="page-panel"><div class="page-panel-heading"><div><span class="eyebrow">桶分布</span><h3>桶分布概览</h3></div><span class="table-caption">最长前 6 个桶</span></div><div class="page-panel-body"><table class="bucket-table"><thead><tr><th>桶 / K-mer</th><th>冲突链 / 位置节点</th><th>占用</th></tr></thead><tbody id="bucket-table-body"><tr><td colspan="3">加载数据后显示真实桶链统计</td></tr></tbody></table></div></div></div></section>
 
       </main>
     </div>
@@ -50,6 +50,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="../bridge-client.js"></script>
   <script src="../state-store.js"></script>
+  <script src="../ui-state.js"></script>
+  <script src="../ui-actions.js"></script>
   <script src="../pages.js"></script>
 </body>
 </html>

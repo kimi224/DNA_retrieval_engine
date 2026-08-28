@@ -25,6 +25,7 @@
   const nodes = function (selector) { return Array.from(document.querySelectorAll(selector)); };
   const formatNumber = function (value) { return Number(value || 0).toLocaleString("zh-CN"); };
   const fileName = function (path) { return path ? path.split(/[\\/]/).pop() : ""; };
+  const datasetDisplayName = function (data) { return data && (fileName(data.dataset_directory) || data.dataset_id) || "尚未加载数据"; };
   const dataset = function () { return view.app && view.app.dataset && view.app.dataset.loaded ? view.app.dataset : null; };
   const indexState = function () { return view.app && view.app.index && view.app.index.built ? view.app.index : null; };
   const genomeLength = function () { return dataset() ? dataset().reference_length : 0; };
@@ -32,7 +33,9 @@
   const currentBaseWidth = function () { return zoomBaseWidths[view.zoom]; };
 
   function refreshIcons() {
-    if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
+    if (!window.lucide || typeof window.lucide.createIcons !== "function") return;
+    const pending = document.querySelector("i[data-lucide]");
+    if (pending) window.lucide.createIcons({ root: document });
   }
 
   function showToast(message) {
@@ -107,42 +110,72 @@
       closeButton.title = view.inspectorCollapsed ? "打开详情" : "收起详情";
       closeButton.setAttribute("aria-label", closeButton.title);
       const icon = closeButton.querySelector("[data-lucide]");
-      if (icon) icon.setAttribute("data-lucide", view.inspectorCollapsed ? "panel-right-open" : "panel-right-close");
+      if (icon) {
+        const replacement = document.createElement("i");
+        replacement.setAttribute("data-lucide", view.inspectorCollapsed ? "panel-right-open" : "panel-right-close");
+        replacement.setAttribute("aria-hidden", "true");
+        icon.replaceWith(replacement);
+      }
     }
     if (openButton) openButton.hidden = !view.inspectorCollapsed;
     refreshIcons();
+  }
+
+  function uiCapabilities() {
+    if (window.DnaUiState && typeof window.DnaUiState.capabilities === "function") {
+      const storeSnapshot = window.DnaStore && window.DnaStore.snapshot ? window.DnaStore.snapshot() : null;
+      return window.DnaUiState.capabilities({
+        app: view.app,
+        result: view.result,
+        bridgeReady: Boolean(storeSnapshot ? storeSnapshot.bridgeReady : view.app && view.app.bridge_ready)
+      });
+    }
+    return {
+      bridgeReady: false,
+      running: false,
+      dataLoaded: false,
+      hasResult: false,
+      canConfigure: true,
+      canChooseInput: false,
+      canLoadDataset: false,
+      canRunSearch: false,
+      canExport: false,
+      canCancel: false,
+      canInspect: false
+    };
   }
 
   function renderAppState() {
     const data = dataset();
     const index = indexState();
     const task = view.app && view.app.task;
-    const running = task && task.status === "running";
-    const bridgeReady = Boolean(view.app && view.app.bridge_ready);
+    const capabilities = uiCapabilities();
+    const running = capabilities.running;
+    const bridgeReady = capabilities.bridgeReady;
     const runButton = node("#run-button");
     const exportButton = node("#export-button");
-    if (runButton) runButton.disabled = !bridgeReady || !data || running;
-    if (exportButton) exportButton.disabled = !bridgeReady || !view.result || running;
+    if (runButton) runButton.disabled = !capabilities.canRunSearch;
+    if (exportButton) exportButton.disabled = !capabilities.canExport;
     nodes(".input-action, .file-field, .truth-file-button").forEach(function (button) {
-      button.disabled = running || !bridgeReady || (button.id === "load-folder-button" && !view.paths.dataset) || (button.id === "load-files-button" && !(view.paths.reference && view.paths.reads));
+      const missingPath = (button.id === "generate-button" && !view.paths.output) || (button.id === "load-folder-button" && !view.paths.dataset) || (button.id === "load-files-button" && !(view.paths.reference && view.paths.reads));
+      button.disabled = !capabilities.canChooseInput || (button.classList.contains("input-action") && missingPath);
     });
     nodes("[data-step-target], #mismatch-range, #prune-toggle").forEach(function (control) {
-      control.disabled = running || !bridgeReady || !data;
+      control.disabled = !capabilities.canConfigure;
     });
+    const seedInput = node("#seed-input");
+    if (seedInput) seedInput.disabled = running;
     nodes("#window-range, #zoom-in, #zoom-out, #overview-zoom-in, #overview-zoom-out, #center-view, #copy-result").forEach(function (control) {
-      control.disabled = running || !bridgeReady || !data;
+      control.disabled = !capabilities.canInspect || (control.id === "copy-result" && !capabilities.hasResult);
     });
-    if (running || !bridgeReady) {
-      // Keep only the local Inspector toggle available while the bridge or a
-      // long-running task is unavailable; every API-backed action is locked.
-      nodes("button").forEach(function (button) {
-        if (button.id !== "toggle-inspector" && button.id !== "open-inspector-button") button.disabled = true;
-      });
-    }
+    const mismatchToggle = node("#mismatch-toggle");
+    if (mismatchToggle) mismatchToggle.disabled = !capabilities.hasResult || running;
     setInspectorCollapsed(view.inspectorCollapsed);
 
     if (data) {
-      setText("#project-name", data.dataset_id + " / " + data.reference_id);
+      // Show the dataset folder as the stable project name; the reference ID
+      // remains available in the workspace coordinate and alignment labels.
+      setText("#project-name", datasetDisplayName(data));
       setText("#project-meta", data.source_mode === "generated" ? "生成数据 · 本地项目" : "导入数据 · 本地项目");
       setText("#nav-read-count", data.read_count);
       setText("#input-state-label", "已加载");
@@ -165,6 +198,11 @@
 
     const status = node("#run-status-text");
     const statusWrap = status && status.parentElement;
+    const cancelButton = node("#cancel-task-button");
+    if (cancelButton) {
+      cancelButton.hidden = !capabilities.canCancel;
+      cancelButton.disabled = !capabilities.canCancel;
+    }
     if (statusWrap) statusWrap.classList.toggle("is-error", Boolean(task && task.status === "error"));
     if (!bridgeReady) setText("#run-status-text", "正在连接本地服务…");
     else if (task && task.status === "running") setText("#run-status-text", task.message + " · " + task.progress + "%");
@@ -512,6 +550,18 @@
   }
 
   function wireControls() {
+    window.addEventListener("dna:reset-view", function () {
+      view.zoom = 1;
+      view.windowSize = zoomWindows[1];
+      view.overviewZoom = 1;
+      setText("#zoom-label", "1×");
+      setText("#overview-zoom-label", "1×");
+      const alignment = node("#alignment-scroll");
+      const overview = node("#overview-map");
+      if (alignment) alignment.className = "alignment-scroll zoom-1";
+      if (overview) overview.style.width = "100%";
+      updateWindowStart(0);
+    });
     nodes("[data-step-target]").forEach(function (button) {
       button.addEventListener("click", function () {
         view.kmer = Math.max(4, Math.min(12, view.kmer + Number(button.dataset.step)));
@@ -521,6 +571,15 @@
     node("#mismatch-range").addEventListener("input", function (event) { view.threshold = Number(event.target.value); setText("#mismatch-output", view.threshold); syncRangeVisual(event.target); });
     node("#mismatch-toggle").addEventListener("change", function (event) { view.showMismatches = event.target.checked; renderInspector(); });
     node("#run-button").addEventListener("click", function () { startTask("start_search", { k: view.kmer, max_mismatches: view.threshold, early_prune: node("#prune-toggle").checked }); });
+    node("#cancel-task-button").addEventListener("click", async function () {
+      const task = view.app && view.app.task;
+      if (!task || !task.task_id || !uiCapabilities().canCancel) return;
+      try {
+        const response = await window.DnaBridge.call("cancel_task", task.task_id);
+        if (!response.ok) throw new Error(response.error);
+        showToast("正在取消任务");
+      } catch (error) { showToast(error.message || String(error)); }
+    });
     node("#window-range").addEventListener("input", function (event) { updateWindowStart(event.target.value); });
     node("#zoom-in").addEventListener("click", function () { view.zoom = Math.min(2, view.zoom + 1); view.windowSize = zoomWindows[view.zoom]; setText("#zoom-label", ["0.75×", "1×", "1.5×"][view.zoom]); node("#alignment-scroll").className = "alignment-scroll zoom-" + view.zoom; updateWindowStart(view.windowStart); });
     node("#zoom-out").addEventListener("click", function () { view.zoom = Math.max(0, view.zoom - 1); view.windowSize = zoomWindows[view.zoom]; setText("#zoom-label", ["0.75×", "1×", "1.5×"][view.zoom]); node("#alignment-scroll").className = "alignment-scroll zoom-" + view.zoom; updateWindowStart(view.windowStart); });

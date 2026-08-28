@@ -4,10 +4,11 @@
 .page-sidebar { display: flex; flex-direction: column; padding: 28px 19px 18px; border-right: 1px solid var(--line); background: var(--surface-subtle); }
 .page-sidebar .brand-block { min-width: 0; margin-bottom: 27px; }
 .page-sidebar-title { margin: 0 0 12px; color: var(--ink-950); font-size: 17px; font-weight: 730; }
-.page-project { display: flex; align-items: center; gap: 9px; min-height: 58px; padding: 9px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); transition: border-color var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard); }
+.page-project { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 58px; padding: 9px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); transition: border-color var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-standard); }
 .page-project:hover { border-color: var(--blue-line); box-shadow: 0 7px 20px rgba(18, 32, 51, .06); transform: translateY(-1px); }
 .page-project .project-icon { width: 31px; height: 31px; }
-.page-project strong { display: block; color: var(--ink-800); font-size: 12px; }
+.page-project > div:last-child { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+.page-project strong { display: block; min-width: 0; overflow: hidden; color: var(--ink-800); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .page-project small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
 .page-nav { display: grid; gap: 4px; margin-top: 23px; }
 .page-nav-label { position: relative; padding: 0 7px 7px; color: transparent; font-size: 12px; font-weight: 700; }

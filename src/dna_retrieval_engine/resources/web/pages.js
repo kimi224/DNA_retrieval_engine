@@ -1,29 +1,57 @@
 (function () {
   "use strict";
 
-  const page = location.pathname.split("/").pop();
   const state = { app: null, result: null };
+  const initialized = { index: false, reads: false, report: false, store: false };
   const node = function (selector) { return document.querySelector(selector); };
   const nodes = function (selector) { return Array.from(document.querySelectorAll(selector)); };
   const formatNumber = function (value) { return Number(value || 0).toLocaleString("zh-CN"); };
   const fileName = function (path) { return path ? path.split(/[\\/]/).pop() : "—"; };
+  const datasetDisplayName = function (data) { return data && (data.dataset_directory ? fileName(data.dataset_directory) : data.dataset_id) || "尚未加载数据"; };
   const displayHit = function (read) { return read && (read.best_hit || read.nearest_hit) || null; };
 
   function bridgeReady() {
-    return Boolean(state.app && state.app.bridge_ready);
+    const snapshot = window.DnaStore && window.DnaStore.snapshot ? window.DnaStore.snapshot() : null;
+    return Boolean(snapshot ? snapshot.bridgeReady : state.app && state.app.bridge_ready);
   }
 
   function taskRunning() {
     return Boolean(state.app && state.app.task && state.app.task.status === "running");
   }
 
+  function uiCapabilities() {
+    if (window.DnaUiState && typeof window.DnaUiState.capabilities === "function") {
+      return window.DnaUiState.capabilities({
+        app: state.app,
+        result: state.result,
+        bridgeReady: bridgeReady()
+      });
+    }
+    return {
+      bridgeReady: false,
+      running: false,
+      dataLoaded: false,
+      hasResult: false,
+      canChooseInput: false,
+      canLoadDataset: false,
+      canRunSearch: false,
+      canExport: false
+    };
+  }
+
   function lockPageActions() {
-    const locked = !bridgeReady() || taskRunning();
-    nodes(".page-actions button").forEach(function (button) { button.disabled = locked; });
+    const capabilities = uiCapabilities();
+    nodes(".page-actions button").forEach(function (button) {
+      // Secondary pages have no meaningful action before a dataset exists.
+      // Help/user actions live in the top bar and remain available.
+      button.disabled = button.dataset.localAction ? !capabilities.bridgeReady || capabilities.running : !capabilities.dataLoaded || !capabilities.bridgeReady || capabilities.running;
+    });
   }
 
   function refreshIcons() {
-    if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
+    if (!window.lucide || typeof window.lucide.createIcons !== "function") return;
+    const pending = document.querySelector("i[data-lucide]");
+    if (pending) window.lucide.createIcons({ root: document });
   }
 
   function toast(message) {
@@ -42,7 +70,7 @@
 
   function setCommonState() {
     const data = state.app && state.app.dataset && state.app.dataset.loaded ? state.app.dataset : null;
-    nodes("[data-project-name]").forEach(function (target) { target.textContent = data ? data.dataset_id + " / " + data.reference_id : "尚未加载数据"; });
+    nodes("[data-project-name]").forEach(function (target) { target.textContent = data ? datasetDisplayName(data) : "尚未加载数据"; });
     nodes("[data-project-meta]").forEach(function (target) { target.textContent = data ? (data.source_mode === "generated" ? "生成数据 · 本地项目" : "导入数据 · 本地项目") : "课程设计 · 本地项目"; });
     nodes("[data-read-count]").forEach(function (target) { target.textContent = data ? data.read_count : 0; });
   }
@@ -59,11 +87,6 @@
   function renderIndexPage() {
     const data = state.app && state.app.dataset && state.app.dataset.loaded ? state.app.dataset : null;
     const index = state.app && state.app.index && state.app.index.built ? state.app.index : null;
-    const task = state.app && state.app.task;
-    const rebuild = node("#rebuild-index-button");
-    if (rebuild) rebuild.disabled = !data || !bridgeReady() || (task && task.status === "running");
-    const refresh = node("#refresh-index-button");
-    if (refresh) refresh.disabled = !data || !bridgeReady() || Boolean(task && task.status === "running");
     setText("#index-side-reference", data ? "连续字符数组 · " + formatNumber(data.reference_length) + " bp" : "连续字符数组 · 等待数据");
     setText("#index-k", index ? index.k : "—");
     setText("#index-windows", index ? formatNumber(index.window_count) : "0");
@@ -98,11 +121,7 @@
   }
 
   function initIndexPage() {
-    node("#refresh-index-button").addEventListener("click", function () { if (!bridgeReady() || taskRunning()) return; window.DnaBridge.refreshState().then(function () { toast("索引状态已同步"); }).catch(function (error) { toast(error.message); }); });
-    node("#rebuild-index-button").addEventListener("click", function () {
-      const index = state.app && state.app.index;
-      startTask("start_build_index", index && index.built ? index.k : 6);
-    });
+    // Read-only page: index construction happens automatically on load/search.
   }
 
   function initReadsPage() {
@@ -194,7 +213,11 @@
         row.style.setProperty("--row-index", rowIndex);
         row.title = "点击回到工作台定位 " + read.id;
         row.innerHTML = '<td>' + read.id + '</td><td><span class="read-string" title="' + read.sequence + '">' + sequenceMarkup(read) + '</span></td><td><code>' + read.seed + '</code></td><td>' + (best ? best.start_1 + (accepted && read.hits.length > 1 ? "（" + read.hits.length + " 个命中）" : "") : "未命中") + '</td><td>' + (best ? best.hamming_distance + " / " + state.result.parameters.max_mismatches : "—") + '</td><td><span class="result-pill' + pillClass + '">' + resultText + "</span></td>";
-        const open = function () { sessionStorage.setItem("selected_read_id", read.id); location.href = "../index.html"; };
+        const open = function () {
+          sessionStorage.setItem("selected_read_id", read.id);
+          if (window.DnaRouter) window.DnaRouter.navigate("workspace");
+          else location.replace("../index.html");
+        };
         row.addEventListener("click", open);
         row.addEventListener("keydown", function (event) { if (event.key === "Enter" || event.key === " ") open(); });
         body.appendChild(row);
@@ -202,6 +225,11 @@
       const end = Math.min(start + view.pageSize, reads.length);
       note.textContent = reads.length ? "第 " + (start + 1) + "–" + end + " 条 · 共 " + reads.length + " 条 Reads" : "没有可显示的 Reads";
       renderPagination(totalPages);
+      const enabled = Boolean(state.result && uiCapabilities().canInspect);
+      input.disabled = !enabled;
+      filter.querySelector("select").disabled = !enabled;
+      sort.querySelectorAll("button").forEach(function (button) { button.disabled = !enabled; });
+      pagination.querySelectorAll("button").forEach(function (button) { button.disabled = !enabled || button.disabled; });
       refreshIcons();
     }
 
@@ -216,7 +244,16 @@
         render(true);
       });
     });
-    node("#go-import-button").addEventListener("click", function () { if (taskRunning() || !bridgeReady()) return; sessionStorage.setItem("open_input_mode", "import"); location.href = "../index.html"; });
+    node("#go-import-button").addEventListener("click", function () {
+      if (taskRunning() || !bridgeReady()) return;
+      sessionStorage.setItem("open_input_mode", "import");
+      if (window.DnaRouter) window.DnaRouter.navigate("workspace");
+      else location.replace("../index.html");
+      window.setTimeout(function () {
+        const importTab = node('[data-input-mode="import"]');
+        if (importTab) importTab.click();
+      }, 0);
+    });
     node("#export-reads-button").addEventListener("click", exportReport);
     state.renderReads = render;
     render();
@@ -225,10 +262,11 @@
   function renderReadsPage() {
     const data = state.app && state.app.dataset && state.app.dataset.loaded ? state.app.dataset : null;
     const summary = state.result && state.result.summary;
+    const capabilities = uiCapabilities();
     setText("#reads-side-summary", data ? data.read_count + " 条 Reads · 平均 " + data.average_read_length + " bp" : "尚未加载 Reads");
     setText("#reads-side-result", summary ? summary.matched_read_count + " 条命中 · " + summary.unmatched_read_count + " 条未命中" : "运行检索后显示结果");
     setText("#reads-result-pill", summary ? summary.matched_read_count + " 条命中" : "0 条命中");
-    node("#go-import-button").disabled = !bridgeReady() || taskRunning();
+    node("#go-import-button").disabled = !capabilities.canChooseInput;
     node("#export-reads-button").disabled = !state.result || !bridgeReady() || taskRunning();
     if (state.renderReads) state.renderReads();
   }
@@ -247,6 +285,7 @@
     const result = state.result;
     const summary = result && result.summary;
     const parameters = result && result.parameters;
+    const capabilities = uiCapabilities();
     setText("#report-run-id", result ? result.run_id : "尚未完成检索");
     setText("#report-hits", summary ? summary.matched_read_count + " / " + summary.read_count : "0 / 0");
     setText("#report-rate", summary ? summary.match_rate.toFixed(1) + "% · " + summary.unmatched_read_count + " 条未命中" : "等待检索");
@@ -276,8 +315,8 @@
         item.querySelector("small").textContent = index + " 个错配 · " + percentage.toFixed(1) + "%";
       });
     }
-    node("#print-report-button").disabled = !result || !bridgeReady() || taskRunning();
-    node("#export-report-button").disabled = !result || !bridgeReady() || taskRunning();
+    node("#print-report-button").disabled = !result || !capabilities.dataLoaded || !capabilities.bridgeReady || capabilities.running;
+    node("#export-report-button").disabled = !result || !capabilities.canExport;
   }
 
   function initReportPage() {
@@ -288,23 +327,39 @@
   function render() {
     setCommonState();
     lockPageActions();
-    if (page === "index-state.html") renderIndexPage();
-    else if (page === "reads.html") renderReadsPage();
-    else if (page === "report.html") renderReportPage();
+    if (node("#bucket-table-body")) renderIndexPage();
+    if (node("#reads-table-body")) renderReadsPage();
+    if (node("#report-distribution")) renderReportPage();
     refreshIcons();
   }
 
-  function init() {
-    nodes("[data-toast]").forEach(function (target) { target.addEventListener("click", function () { toast(target.dataset.toast); }); });
-    if (page === "index-state.html") initIndexPage();
-    else if (page === "reads.html") initReadsPage();
-    else if (page === "report.html") initReportPage();
-    window.DnaStore.subscribe(function (snapshot) {
-      state.app = snapshot.app;
-      state.result = snapshot.result;
-      render();
-    });
+  function mountAvailableViews() {
+    if (node("#bucket-table-body") && !initialized.index) {
+      initialized.index = true;
+      initIndexPage();
+    }
+    if (node("#reads-table-body") && !initialized.reads) {
+      initialized.reads = true;
+      initReadsPage();
+    }
+    if (node("#report-distribution") && !initialized.report) {
+      initialized.report = true;
+      initReportPage();
+    }
+    if (!initialized.store) {
+      initialized.store = true;
+      window.DnaStore.subscribe(function (snapshot) {
+        state.app = snapshot.app;
+        state.result = snapshot.result;
+        render();
+      });
+    }
     render();
+  }
+
+  function init() {
+    mountAvailableViews();
+    window.addEventListener("dna:views-ready", mountAvailableViews);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

@@ -10,12 +10,13 @@
   <link rel="stylesheet" href="../pages.css">
   <script src="../vendor/lucide.min.js"></script>
 </head>
-<body>
+<body class="app-booting">
+  <div class="startup-overlay" id="startup-overlay" role="status" aria-live="polite" aria-label="正在启动应用"><div class="startup-panel"><div class="startup-brand"><div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div><div><strong>NEXUS</strong><span>DNA RETRIEVAL ENGINE</span></div></div><div class="startup-progress" aria-hidden="true"><span id="startup-progress-fill"></span></div><div class="startup-status"><strong id="startup-stage">正在加载本地界面</strong><span id="startup-detail">准备 WebView2 与本地服务</span></div><button class="secondary-button" id="startup-retry" type="button" hidden>重新连接</button></div></div>
   <div class="secondary-shell">
     <header class="topbar">
       <div class="brand-block"><div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div><div><div class="brand-name">NEXUS</div><div class="brand-product">DNA RETRIEVAL ENGINE</div></div></div>
       <div class="topbar-context"><strong>运行报告</strong><small>RUN REPORT</small></div>
-      <div class="topbar-meta"><span class="workspace-status"><i data-lucide="circle-check" aria-hidden="true"></i> 本地工作区</span><button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-toast="帮助面板将在 pywebview 版本中打开"><i data-lucide="circle-help" aria-hidden="true"></i></button><button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单">DS</button></div>
+      <div class="topbar-meta"><span class="workspace-status"><i data-lucide="circle-check" aria-hidden="true"></i> 本地工作区</span><button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-ui-action="help"><i data-lucide="circle-help" aria-hidden="true"></i></button><button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单" data-ui-action="user-menu">DS</button></div>
     </header>
     <div class="secondary-grid">
       <aside class="page-sidebar" aria-label="工作区页面">
@@ -24,7 +25,7 @@
         <div class="page-side-note"><strong><i data-lucide="file-check-2" aria-hidden="true"></i> 当前报告</strong><span id="report-run-id">尚未完成检索</span><span>可导出 JSON 与 CSV，或调用系统打印</span></div>
       </aside>
       <main class="page-main">
-        <div class="page-main-header"><div><div class="page-breadcrumb"><span>工作区</span><i data-lucide="chevron-right" aria-hidden="true"></i><span>运行报告</span></div><h1>运行报告 <small>RUN REPORT</small></h1><p class="page-lede">用一页结果复盘这次高通量错配容错检索。<span>Summarize the completed tolerant-search run.</span></p></div><div class="page-actions"><button class="secondary-button" id="print-report-button" type="button"><i data-lucide="printer" aria-hidden="true"></i> 打印预览</button><button class="primary-button page-action-primary" id="export-report-button" type="button" disabled><i data-lucide="file-down" aria-hidden="true"></i> 导出数据</button></div></div>
+        <div class="page-main-header"><div><div class="page-breadcrumb"><span>工作区</span><i data-lucide="chevron-right" aria-hidden="true"></i><span>运行报告</span></div><h1>运行报告 <small>RUN REPORT</small></h1><p class="page-lede">用一页结果复盘这次高通量错配容错检索。<span>Summarize the completed tolerant-search run.</span></p></div><div class="page-actions"><button class="secondary-button" id="print-report-button" type="button" disabled><i data-lucide="printer" aria-hidden="true"></i> 打印预览</button><button class="primary-button page-action-primary" id="export-report-button" type="button" disabled><i data-lucide="file-down" aria-hidden="true"></i> 导出数据</button></div></div>
 
         <section class="page-section"><div class="page-stat-grid"><div class="page-stat"><span class="page-stat-label">容错命中</span><strong id="report-hits">0 / 0</strong><span class="page-stat-note" id="report-rate">等待检索</span></div><div class="page-stat"><span class="page-stat-label">最大错配</span><strong id="report-threshold">—</strong><span class="page-stat-note">Hamming distance</span></div><div class="page-stat"><span class="page-stat-label">候选位置</span><strong id="report-candidates">0</strong><span class="page-stat-note">经种子过滤</span></div><div class="page-stat"><span class="page-stat-label">运行耗时</span><strong id="report-elapsed">0 ms</strong><span class="page-stat-note" id="report-k">本地 · 等待运行</span></div></div></section>
 
@@ -37,6 +38,8 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="../bridge-client.js"></script>
   <script src="../state-store.js"></script>
+  <script src="../ui-state.js"></script>
+  <script src="../ui-actions.js"></script>
   <script src="../pages.js"></script>
 </body>
 </html>

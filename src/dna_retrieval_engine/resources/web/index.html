@@ -7,9 +7,11 @@
   <title>DNA Retrieval Engine · Run workspace</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="pages.css">
   <script src="vendor/lucide.min.js"></script>
 </head>
-<body class="run-page">
+<body class="run-page app-booting">
+  <div class="startup-overlay" id="startup-overlay" role="status" aria-live="polite" aria-label="正在启动应用"><div class="startup-panel"><div class="startup-brand"><div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div><div><strong>NEXUS</strong><span>DNA RETRIEVAL ENGINE</span></div></div><div class="startup-progress" aria-hidden="true"><span id="startup-progress-fill"></span></div><div class="startup-status"><strong id="startup-stage">正在加载本地界面</strong><span id="startup-detail">准备 WebView2 与本地服务</span></div><button class="secondary-button" id="startup-retry" type="button" hidden>重新连接</button></div></div>
   <div class="app-shell">
     <header class="topbar">
       <div class="brand-block">
@@ -22,8 +24,8 @@
       <div class="topbar-context"><strong>运行工作台</strong></div>
       <div class="topbar-meta">
         <span class="workspace-status"><i data-lucide="circle-check" aria-hidden="true"></i> 本地工作区</span>
-        <button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-toast="帮助面板将在 pywebview 版本中打开"><i data-lucide="circle-help" aria-hidden="true"></i></button>
-        <button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单" data-toast="当前用户：课程设计实验室">DS</button>
+        <button class="icon-button" type="button" title="打开帮助" aria-label="打开帮助" data-ui-action="help"><i data-lucide="circle-help" aria-hidden="true"></i></button>
+        <button class="avatar-button" type="button" title="用户菜单" aria-label="用户菜单" data-ui-action="user-menu">DS</button>
       </div>
     </header>
 
@@ -34,7 +36,7 @@
             <div class="eyebrow">项目</div>
             <h1>错配容错检索</h1>
           </div>
-          <button class="icon-button subtle" type="button" title="更多项目操作" aria-label="更多项目操作" data-toast="项目操作菜单将在 pywebview 版本中打开"><i data-lucide="ellipsis" aria-hidden="true"></i></button>
+          <button class="icon-button subtle" type="button" title="更多项目操作" aria-label="更多项目操作" data-ui-action="project-menu"><i data-lucide="ellipsis" aria-hidden="true"></i></button>
         </div>
 
         <div class="project-select">
@@ -112,12 +114,12 @@
 
         <div class="sidebar-run">
           <button class="primary-button" id="run-button" type="button" disabled><i data-lucide="play" aria-hidden="true"></i><span>运行批量检索</span><kbd>Ctrl ↵</kbd></button>
-          <div class="run-status" aria-live="polite"><span class="status-dot"></span><span id="run-status-text">正在连接本地服务…</span></div>
+          <div class="run-status" aria-live="polite"><span class="status-dot"></span><span id="run-status-text">正在连接本地服务…</span><button class="text-button" id="cancel-task-button" type="button" hidden>取消任务</button></div>
         </div>
 
         <div class="sidebar-footer">
           <span><i data-lucide="shield-check" aria-hidden="true"></i> 仅本地</span>
-          <span>课程设计 v1.0</span>
+          <span>课程设计 v2.0</span>
         </div>
       </aside>
 
@@ -131,7 +133,7 @@
           <div class="header-actions">
             <button class="secondary-button" id="export-button" type="button" disabled><i data-lucide="download" aria-hidden="true"></i> Export</button>
             <button class="icon-button" type="button" id="open-inspector-button" title="打开命中详情" aria-label="打开命中详情" hidden><i data-lucide="panel-right-open" aria-hidden="true"></i></button>
-            <button class="icon-button" type="button" title="更多视图选项" aria-label="更多视图选项" data-toast="视图选项菜单将在 pywebview 版本中打开"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></button>
+            <button class="icon-button" type="button" title="更多视图选项" aria-label="更多视图选项" data-ui-action="view-menu"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></button>
           </div>
         </div>
 
@@ -145,7 +147,7 @@
         <section class="visual-panel" aria-labelledby="overview-heading">
           <div class="panel-heading">
               <div><span class="eyebrow">概览</span><h3 id="overview-heading">参考基因组坐标图</h3></div>
-            <div class="panel-tools"><div class="overview-scale-control"><button class="icon-button subtle" type="button" id="overview-zoom-out" title="缩小坐标图" aria-label="缩小坐标图"><i data-lucide="minus" aria-hidden="true"></i></button><span id="overview-zoom-label">1×</span><button class="icon-button subtle" type="button" id="overview-zoom-in" title="放大坐标图" aria-label="放大坐标图"><i data-lucide="plus" aria-hidden="true"></i></button></div><span class="coordinate-readout" id="coordinate-readout">未加载 : —</span><button class="icon-button subtle" type="button" title="复制坐标" aria-label="复制坐标" data-toast="当前坐标可在命中详情中复制"><i data-lucide="copy" aria-hidden="true"></i></button></div>
+            <div class="panel-tools"><div class="overview-scale-control"><button class="icon-button subtle" type="button" id="overview-zoom-out" title="缩小坐标图" aria-label="缩小坐标图"><i data-lucide="minus" aria-hidden="true"></i></button><span id="overview-zoom-label">1×</span><button class="icon-button subtle" type="button" id="overview-zoom-in" title="放大坐标图" aria-label="放大坐标图"><i data-lucide="plus" aria-hidden="true"></i></button></div><span class="coordinate-readout" id="coordinate-readout">未加载 : —</span><button class="icon-button subtle" type="button" title="复制坐标" aria-label="复制坐标" data-ui-action="copy-coordinate"><i data-lucide="copy" aria-hidden="true"></i></button></div>
           </div>
           <div class="overview-scroll" id="overview-scroll"><div class="overview-map" id="overview-map">
             <div class="map-label">参考序列</div>
@@ -187,7 +189,7 @@
         <div class="inspector-section"><span class="section-label">Read 序列</span><div class="inspector-sequence" id="inspector-sequence"></div><div class="sequence-note"><span>— bp</span><span id="inspector-mismatch-count">等待结果</span></div></div>
         <div class="inspector-section"><span class="section-label">查找路径</span><dl class="trace-list"><div><dt>种子前缀</dt><dd><code id="trace-seed">—</code></dd></div><div><dt>哈希桶</dt><dd id="trace-bucket">—</dd></div><div><dt>候选位置</dt><dd id="trace-candidates">—</dd></div><div><dt>比较字符</dt><dd id="trace-compared">—</dd></div><div><dt>已剪枝</dt><dd id="trace-pruned">—</dd></div></dl></div>
         <div class="inspector-section mismatch-section"><div class="section-label-row"><span class="section-label">错配碱基</span><label class="mini-toggle"><input id="mismatch-toggle" type="checkbox" checked><span>显示</span></label></div><div class="mismatch-list" id="mismatch-list"></div></div>
-        <div class="inspector-actions"><button class="secondary-button full-button" type="button" id="copy-result"><i data-lucide="copy" aria-hidden="true"></i> 复制命中摘要</button><button class="text-button full-text-button" type="button" data-toast="将在 pywebview 版本中打开算法追踪器">打开算法追踪 <i data-lucide="arrow-up-right" aria-hidden="true"></i></button></div>
+        <div class="inspector-actions"><button class="secondary-button full-button" type="button" id="copy-result"><i data-lucide="copy" aria-hidden="true"></i> 复制命中摘要</button><button class="text-button full-text-button" type="button" data-ui-action="trace">打开算法追踪 <i data-lucide="arrow-up-right" aria-hidden="true"></i></button></div>
         <div class="inspector-footnote"><i data-lucide="lock-keyhole" aria-hidden="true"></i><span>所有数据与检索都只在本机完成。<br>内部坐标 0-based，界面坐标 1-based。</span></div>
       </aside>
     </div>
@@ -195,6 +197,10 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="bridge-client.js"></script>
   <script src="state-store.js"></script>
+  <script src="ui-state.js"></script>
+  <script src="router.js"></script>
+  <script src="ui-actions.js"></script>
   <script src="app.js"></script>
+  <script src="pages.js"></script>
 </body>
 </html>
