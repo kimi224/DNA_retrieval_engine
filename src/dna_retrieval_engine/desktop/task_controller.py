@@ -31,6 +31,7 @@ class TaskController:
     def __init__(self, push_callback: Callable[[dict[str, Any]], None] | None = None) -> None:
         self._lock = RLock()
         self._push_callback = push_callback
+        self._closed = False
         self._state: dict[str, Any] = {
             "task_id": None,
             "type": None,
@@ -64,6 +65,13 @@ class TaskController:
         with self._lock:
             return self._state["status"] == "running"
 
+    def close(self) -> None:
+        """Stop accepting new work after the native window begins closing."""
+        with self._lock:
+            self._closed = True
+            if self._state["status"] == "running":
+                self._state["cancel_requested"] = True
+
     def is_cancel_requested(self, task_id: str) -> bool:
         with self._lock:
             return self._state["task_id"] == task_id and self._state["cancel_requested"]
@@ -77,6 +85,8 @@ class TaskController:
 
     def start(self, task_type: str, worker: Callable[[TaskContext], Any]) -> dict[str, Any]:
         with self._lock:
+            if self._closed:
+                return {"ok": False, "error": "窗口正在关闭，无法启动新任务"}
             if self._state["status"] == "running":
                 return {
                     "ok": False,
