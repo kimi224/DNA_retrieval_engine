@@ -36,7 +36,7 @@ def test_cli_commands_share_the_production_services(tmp_path: Path) -> None:
                 "--k",
                 "8",
                 "--mismatches",
-                "4",
+                    "3",
                 "--export",
                 str(dataset),
             ]

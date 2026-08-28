@@ -34,7 +34,9 @@ def export_result_files(directory: Path, payload: dict[str, Any]) -> list[Path]:
             ]
         )
         for read in payload["reads"]:
-            best = read["best_hit"]
+            # Include the closest rejected alignment when available so an
+            # exported CSV remains useful for failed 1-3 mismatch Reads.
+            best = read["best_hit"] or read.get("nearest_hit")
             writer.writerow(
                 [
                     read["id"],

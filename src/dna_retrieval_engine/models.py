@@ -71,6 +71,10 @@ class ReadSearchResult:
     pruned_candidate_count: int = 0
     elapsed_ms: float = 0.0
     hits: list[Hit] = field(default_factory=list)
+    # The best candidate that exceeded the selected threshold but is still
+    # within the supported 0-3 mismatch display range.  It is deliberately
+    # separate from ``best_hit`` so ``matched`` remains an acceptance result.
+    nearest_hit: Hit | None = None
     truth_start_0: int | None = None
 
     def best_hit(self) -> Hit | None:
@@ -96,6 +100,7 @@ class ReadSearchResult:
             "elapsed_ms": round(self.elapsed_ms, 4),
             "matched": bool(self.hits),
             "best_hit": best.to_dict() if best else None,
+            "nearest_hit": self.nearest_hit.to_dict() if self.nearest_hit else None,
             "hits": [hit.to_dict() for hit in self.hits],
             "truth_start_0": self.truth_start_0,
             "truth_recovered": truth_recovered,
@@ -117,10 +122,10 @@ class BatchResult:
         candidates = sum(item.candidate_count for item in self.reads)
         pruned = sum(item.pruned_candidate_count for item in self.reads)
         compared = sum(item.compared_base_count for item in self.reads)
-        distribution = [0, 0, 0, 0, 0]
+        distribution = [0, 0, 0, 0]
         for item in self.reads:
             best = item.best_hit()
-            if best is not None and best.hamming_distance <= 4:
+            if best is not None and best.hamming_distance <= 3:
                 distribution[best.hamming_distance] += 1
         return {
             "run_id": self.run_id,
@@ -138,6 +143,10 @@ class BatchResult:
                 "compared_base_count": compared,
                 "elapsed_ms": round(self.elapsed_ms, 4),
                 "mismatch_distribution": distribution,
+                "mismatch_distribution_rates": [
+                    round(value / read_count * 100, 2) if read_count else 0.0
+                    for value in distribution
+                ],
             },
             "reads": [item.to_dict() for item in self.reads],
         }

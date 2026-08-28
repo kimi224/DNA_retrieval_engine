@@ -37,6 +37,8 @@ dna_demo_YYYYMMDD_HHMMSS_seed_N/
 - `checksums`: FASTA 与 FASTQ 的 SHA-256。
 - `reads`: 每条 Read 的真实起点、错配偏移和碱基变化。
 
+生成数据的 `mismatch_range` 固定为 `[0, 3]`。四类错配会按随机种子分配，且每次生成至少包含 0、1、2、3 各一条 Read；因此类别数量不是固定配额。
+
 ## 文件夹发现
 
 只检查所选文件夹当前层，不递归。优先使用规范文件名 `reference.fasta` 和 `reads.fastq`；若不存在，分别寻找唯一的 FASTA/FASTQ 候选。缺失或同类候选超过一个均明确报错。`ground_truth.json` 缺失不影响普通检索。

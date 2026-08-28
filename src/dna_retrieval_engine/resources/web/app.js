@@ -15,6 +15,7 @@
     windowStart: 0,
     referenceSequence: "",
     showMismatches: true,
+    inspectorCollapsed: sessionStorage.getItem("inspector_collapsed") === "1",
     paths: { output: null, dataset: null, reference: null, reads: null, truth: null },
     lastTaskSignature: "",
     referenceRequest: 0
@@ -83,6 +84,35 @@
     return selected;
   }
 
+  function displayHit(read) {
+    return read && (read.best_hit || read.nearest_hit) || null;
+  }
+
+  function displayHits(read) {
+    if (!read) return [];
+    return read.matched ? read.hits : (read.nearest_hit ? [read.nearest_hit] : []);
+  }
+
+  function setInspectorCollapsed(collapsed) {
+    view.inspectorCollapsed = Boolean(collapsed);
+    sessionStorage.setItem("inspector_collapsed", view.inspectorCollapsed ? "1" : "0");
+    const grid = node(".workspace-grid");
+    const inspector = node(".inspector");
+    const closeButton = node("#toggle-inspector");
+    const openButton = node("#open-inspector-button");
+    if (grid) grid.classList.toggle("inspector-collapsed", view.inspectorCollapsed);
+    if (inspector) inspector.classList.toggle("is-collapsed", view.inspectorCollapsed);
+    if (closeButton) {
+      closeButton.setAttribute("aria-expanded", String(!view.inspectorCollapsed));
+      closeButton.title = view.inspectorCollapsed ? "打开详情" : "收起详情";
+      closeButton.setAttribute("aria-label", closeButton.title);
+      const icon = closeButton.querySelector("[data-lucide]");
+      if (icon) icon.setAttribute("data-lucide", view.inspectorCollapsed ? "panel-right-open" : "panel-right-close");
+    }
+    if (openButton) openButton.hidden = !view.inspectorCollapsed;
+    refreshIcons();
+  }
+
   function renderAppState() {
     const data = dataset();
     const index = indexState();
@@ -92,10 +122,24 @@
     const runButton = node("#run-button");
     const exportButton = node("#export-button");
     if (runButton) runButton.disabled = !bridgeReady || !data || running;
-    if (exportButton) exportButton.disabled = !view.result || running;
+    if (exportButton) exportButton.disabled = !bridgeReady || !view.result || running;
     nodes(".input-action, .file-field, .truth-file-button").forEach(function (button) {
       button.disabled = running || !bridgeReady || (button.id === "load-folder-button" && !view.paths.dataset) || (button.id === "load-files-button" && !(view.paths.reference && view.paths.reads));
     });
+    nodes("[data-step-target], #mismatch-range, #prune-toggle").forEach(function (control) {
+      control.disabled = running || !bridgeReady || !data;
+    });
+    nodes("#window-range, #zoom-in, #zoom-out, #overview-zoom-in, #overview-zoom-out, #center-view, #copy-result").forEach(function (control) {
+      control.disabled = running || !bridgeReady || !data;
+    });
+    if (running || !bridgeReady) {
+      // Keep only the local Inspector toggle available while the bridge or a
+      // long-running task is unavailable; every API-backed action is locked.
+      nodes("button").forEach(function (button) {
+        if (button.id !== "toggle-inspector" && button.id !== "open-inspector-button") button.disabled = true;
+      });
+    }
+    setInspectorCollapsed(view.inspectorCollapsed);
 
     if (data) {
       setText("#project-name", data.dataset_id + " / " + data.reference_id);
@@ -215,12 +259,12 @@
     const length = genomeLength();
     if (!view.result || !length) return;
     view.result.reads.forEach(function (read) {
-      read.hits.forEach(function (hit) {
+      displayHits(read).forEach(function (hit) {
         const band = document.createElement("button");
         band.type = "button";
-        band.className = "hit-band" + (read.id === view.selectedId ? " is-selected" : "");
+        band.className = "hit-band" + (!read.matched ? " is-rejected" : "") + (read.id === view.selectedId ? " is-selected" : "");
         band.dataset.readId = read.id;
-        band.title = read.id + " · 位置 " + hit.start_1 + " · Hamming " + hit.hamming_distance;
+        band.title = read.id + " · 位置 " + hit.start_1 + " · 错配 " + hit.hamming_distance + (!read.matched ? " · 匹配失败" : "");
         band.style.left = (hit.start_0 / length * 100) + "%";
         band.style.width = Math.max(.55, read.length / length * 100) + "%";
         band.addEventListener("click", function () { focusRead(read.id, hit.start_0, true); });
@@ -236,7 +280,7 @@
     const visible = [];
     if (view.result) {
       view.result.reads.forEach(function (read) {
-        read.hits.forEach(function (hit) {
+        displayHits(read).forEach(function (hit) {
           if (hit.start_0 < windowEnd() && hit.end_1 > view.windowStart + 1) visible.push({ read: read, hit: hit });
         });
       });
@@ -252,7 +296,7 @@
         return mismatch.read_offset_0 >= sequenceStart && mismatch.read_offset_0 < sequenceEnd;
       }).map(function (mismatch) { return mismatch.read_offset_0 - sequenceStart; });
       const row = document.createElement("div");
-      row.className = "read-row" + (read.id === view.selectedId ? " is-selected" : "");
+      row.className = "read-row" + (!read.matched ? " is-rejected" : "") + (read.id === view.selectedId ? " is-selected" : "");
       row.dataset.readId = read.id;
       row.tabIndex = 0;
       row.setAttribute("role", "button");
@@ -263,7 +307,7 @@
       renderSequence(sequence, read.sequence.slice(sequenceStart, sequenceEnd), mismatchOffsets, visibleStart + 1);
       const score = document.createElement("div");
       score.className = "row-score";
-      score.innerHTML = '<span class="status-label">H=' + hit.hamming_distance + "</span>";
+      score.innerHTML = '<span class="status-label' + (!read.matched ? " mismatch-status" : "") + '">错配' + hit.hamming_distance + "</span>";
       row.appendChild(sequence);
       row.appendChild(score);
       row.addEventListener("click", function () { selectRead(read.id); });
@@ -273,10 +317,10 @@
     if (!visible.length) {
       const empty = document.createElement("div");
       empty.className = "read-empty";
-      empty.innerHTML = '<i data-lucide="scan-line" aria-hidden="true"></i><strong>' + (view.result ? "当前窗口没有命中 Read" : "尚未产生检索结果") + '</strong><span>' + (view.result ? "拖动上方滑杆查看参考序列的其他区段。" : "加载数据后运行批量检索。") + "</span>";
+      empty.innerHTML = '<i data-lucide="scan-line" aria-hidden="true"></i><strong>' + (view.result ? "当前窗口没有比对 Read" : "尚未产生检索结果") + '</strong><span>' + (view.result ? "拖动上方滑杆查看参考序列的其他区段。" : "加载数据后运行批量检索。") + "</span>";
       list.appendChild(empty);
     }
-    setText("#alignment-summary", "当前窗口显示 " + visible.length + " 个命中区间 · 点击行查看详情");
+    setText("#alignment-summary", "当前窗口显示 " + visible.length + " 个比对区间 · 点击行查看详情");
     refreshIcons();
   }
 
@@ -287,26 +331,42 @@
       setText("#inspector-status", "尚未运行");
       setText("#inspector-position", "位置 —");
       setText("#distance-value", "— / " + view.threshold);
-      renderSequence(node("#inspector-sequence"), "", []);
+      setText("#distance-reject-label", "> " + view.threshold + " 拒绝");
+      const emptySequence = node("#inspector-sequence");
+      renderSequence(emptySequence, "", []);
+      if (emptySequence) emptySequence.classList.remove("is-rejected");
+      [node("#inspector-status"), node("#distance-value"), node("#inspector-mismatch-count")].forEach(function (element) {
+        if (element) element.classList.remove("mismatch-status");
+      });
       const mismatchList = node("#mismatch-list");
       if (mismatchList) mismatchList.innerHTML = '<div class="empty-mismatch">运行检索后显示错配明细</div>';
       return;
     }
-    const hit = read.best_hit;
+    const hit = displayHit(read);
+    const accepted = Boolean(read.best_hit);
     const mismatches = hit ? hit.mismatches : [];
     setText("#inspector-title", read.id);
-    setText("#inspector-status", hit ? (hit.hamming_distance === 0 ? "完全一致" : "容错命中") : "未命中");
+    setText("#inspector-status", hit ? (accepted ? (hit.hamming_distance === 0 ? "完全一致" : "容错命中") : "匹配失败") : "未命中");
     setText("#inspector-position", hit ? "位置 " + hit.start_1 + (read.hits.length > 1 ? " · 共 " + read.hits.length + " 个命中" : "") : "无合法位置");
     setText("#distance-value", hit ? hit.hamming_distance + " / " + view.threshold : "> " + view.threshold);
+    setText("#distance-reject-label", "> " + view.threshold + " 拒绝");
+    const statusLabel = node("#inspector-status");
+    const distanceValue = node("#distance-value");
+    const mismatchCount = node("#inspector-mismatch-count");
+    [statusLabel, distanceValue, mismatchCount].forEach(function (element) {
+      if (element) element.classList.toggle("mismatch-status", !accepted);
+    });
     const fill = node("#distance-fill");
     if (fill) {
-      fill.style.width = hit ? Math.max(8, hit.hamming_distance / Math.max(1, view.threshold) * 100) + "%" : "100%";
-      fill.style.background = hit ? "var(--amber)" : "var(--red)";
+      fill.style.width = hit ? Math.min(100, Math.max(8, hit.hamming_distance / Math.max(1, view.threshold) * 100)) + "%" : "100%";
+      fill.style.background = accepted ? "var(--amber)" : "var(--red)";
     }
-    renderSequence(node("#inspector-sequence"), read.sequence, mismatches.map(function (item) { return item.read_offset_0; }), 1);
+    const inspectorSequence = node("#inspector-sequence");
+    renderSequence(inspectorSequence, read.sequence, mismatches.map(function (item) { return item.read_offset_0; }), 1);
+    if (inspectorSequence) inspectorSequence.classList.toggle("is-rejected", !accepted);
     const note = node("#inspector-sequence") && node("#inspector-sequence").nextElementSibling;
     if (note && note.firstElementChild) note.firstElementChild.textContent = read.length + " bp";
-    setText("#inspector-mismatch-count", hit ? hit.hamming_distance + " 个错配碱基" : "未通过阈值");
+    setText("#inspector-mismatch-count", hit ? "错配" + hit.hamming_distance : "未通过阈值");
     setText("#trace-seed", read.seed);
     setText("#trace-bucket", "#" + String(read.bucket_index).padStart(4, "0"));
     setText("#trace-candidates", read.candidate_count + " 个位置");
@@ -375,7 +435,7 @@
   function focusRead(id, position, scrollToSandbox) {
     const read = view.result && view.result.reads.find(function (item) { return item.id === id; });
     if (!read) return;
-    const hit = Number.isInteger(position) ? read.hits.find(function (item) { return item.start_0 === position; }) : read.best_hit;
+    const hit = Number.isInteger(position) ? displayHits(read).find(function (item) { return item.start_0 === position; }) : displayHit(read);
     if (hit) updateWindowStart(hit.start_0 - Math.max(0, Math.floor((view.windowSize - read.length) / 2)));
     selectRead(id);
     if (scrollToSandbox) node(".alignment-panel").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -391,7 +451,7 @@
       if (mismatchRange) { mismatchRange.value = view.threshold; syncRangeVisual(mismatchRange); }
     }
     const selected = selectedRead();
-    if (selected && selected.best_hit && !view.referenceSequence) view.windowStart = Math.max(0, selected.best_hit.start_0 - 10);
+    if (selected && displayHit(selected) && !view.referenceSequence) view.windowStart = Math.max(0, displayHit(selected).start_0 - 10);
     renderMetrics();
     renderHitMap();
     renderReadList();
@@ -415,6 +475,7 @@
 
   async function startTask(method, payload) {
     try {
+      if (!window.DnaBridge.isConnected()) throw new Error("本地服务尚未就绪，请稍后重试");
       const response = await window.DnaBridge.call(method, payload);
       if (!response.ok) throw new Error(response.error);
       await window.DnaBridge.refreshState();
@@ -466,8 +527,10 @@
     node("#overview-zoom-in").addEventListener("click", function () { view.overviewZoom = Math.min(4, view.overviewZoom * 2); node("#overview-map").style.width = view.overviewZoom * 100 + "%"; setText("#overview-zoom-label", view.overviewZoom + "×"); });
     node("#overview-zoom-out").addEventListener("click", function () { view.overviewZoom = Math.max(1, view.overviewZoom / 2); node("#overview-map").style.width = view.overviewZoom * 100 + "%"; setText("#overview-zoom-label", view.overviewZoom + "×"); });
     node("#center-view").addEventListener("click", function () { const read = selectedRead(); if (read) focusRead(read.id, null, false); });
-    node("#copy-result").addEventListener("click", function () { const read = selectedRead(); if (!read) return; const hit = read.best_hit; const summary = read.id + (hit ? " @ " + hit.start_1 + " · Hamming " + hit.hamming_distance + "/" + view.threshold : " · 未命中") + " · 种子 " + read.seed; if (navigator.clipboard) navigator.clipboard.writeText(summary).catch(function () {}); showToast("命中摘要已复制"); });
-    node("#export-button").addEventListener("click", async function () { const response = await window.DnaBridge.call("choose_export_directory"); if (response.ok && !response.cancelled) startTask("start_export_results", { output_directory: response.path }); });
+    node("#copy-result").addEventListener("click", function () { const read = selectedRead(); if (!read) return; const hit = displayHit(read); const summary = read.id + (hit ? " @ " + hit.start_1 + " · 错配" + hit.hamming_distance + "/" + view.threshold : " · 未命中") + " · 种子 " + read.seed; if (navigator.clipboard) navigator.clipboard.writeText(summary).catch(function () {}); showToast("命中摘要已复制"); });
+    node("#toggle-inspector").addEventListener("click", function () { setInspectorCollapsed(!view.inspectorCollapsed); });
+    node("#open-inspector-button").addEventListener("click", function () { setInspectorCollapsed(false); });
+    node("#export-button").addEventListener("click", async function () { try { const response = await window.DnaBridge.call("choose_export_directory"); if (!response.ok) throw new Error(response.error); if (!response.cancelled) startTask("start_export_results", { output_directory: response.path }); } catch (error) { showToast(error.message || String(error)); } });
     document.addEventListener("keydown", function (event) { if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { event.preventDefault(); node("#run-button").click(); } });
     nodes("[data-toast]").forEach(function (button) { button.addEventListener("click", function () { showToast(button.dataset.toast); }); });
   }

@@ -101,7 +101,7 @@
           </div>
           <div class="parameter-row">
             <div><label class="field-label" for="mismatch-range">最大错配数</label><small class="field-help">汉明距离阈值</small></div>
-            <div class="range-wrap"><output id="mismatch-output">2</output><input id="mismatch-range" type="range" min="0" max="4" value="2" step="1" aria-label="最大错配数"></div>
+            <div class="range-wrap"><output id="mismatch-output">2</output><input id="mismatch-range" type="range" min="0" max="3" value="2" step="1" aria-label="最大错配数"></div>
           </div>
           <label class="toggle-row" for="prune-toggle">
             <span><strong>提前剪枝</strong><small>超过阈值后立即退出</small></span>
@@ -130,6 +130,7 @@
           </div>
           <div class="header-actions">
             <button class="secondary-button" id="export-button" type="button" disabled><i data-lucide="download" aria-hidden="true"></i> Export</button>
+            <button class="icon-button" type="button" id="open-inspector-button" title="打开命中详情" aria-label="打开命中详情" hidden><i data-lucide="panel-right-open" aria-hidden="true"></i></button>
             <button class="icon-button" type="button" title="更多视图选项" aria-label="更多视图选项" data-toast="视图选项菜单将在 pywebview 版本中打开"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></button>
           </div>
         </div>
@@ -180,9 +181,9 @@
       </main>
 
       <aside class="inspector" aria-label="命中详情">
-        <div class="inspector-header"><div><span class="eyebrow">命中详情</span><h2 id="inspector-title">等待结果</h2></div><button class="icon-button subtle" type="button" title="收起详情" aria-label="收起详情" data-toast="命中后可在此检查完整算法路径"><i data-lucide="panel-right-close" aria-hidden="true"></i></button></div>
+        <div class="inspector-header"><div><span class="eyebrow">命中详情</span><h2 id="inspector-title">等待结果</h2></div><button class="icon-button subtle" type="button" id="toggle-inspector" title="收起详情" aria-label="收起详情" aria-expanded="true"><i data-lucide="panel-right-close" aria-hidden="true"></i></button></div>
         <div class="inspector-status"><span class="status-dot"></span><strong id="inspector-status">尚未运行</strong><span id="inspector-position">位置 —</span></div>
-        <div class="distance-block"><div class="distance-head"><span>汉明距离</span><strong id="distance-value">— / 2</strong></div><div class="distance-bar"><span id="distance-fill" style="width: 0"></span></div><div class="distance-scale"><span>0 完全一致</span><span>允许范围</span><span>&gt; 2 拒绝</span></div></div>
+        <div class="distance-block"><div class="distance-head"><span>汉明距离</span><strong id="distance-value">— / 2</strong></div><div class="distance-bar"><span id="distance-fill" style="width: 0"></span></div><div class="distance-scale"><span>0 完全一致</span><span>允许范围</span><span id="distance-reject-label">&gt; 2 拒绝</span></div></div>
         <div class="inspector-section"><span class="section-label">Read 序列</span><div class="inspector-sequence" id="inspector-sequence"></div><div class="sequence-note"><span>— bp</span><span id="inspector-mismatch-count">等待结果</span></div></div>
         <div class="inspector-section"><span class="section-label">查找路径</span><dl class="trace-list"><div><dt>种子前缀</dt><dd><code id="trace-seed">—</code></dd></div><div><dt>哈希桶</dt><dd id="trace-bucket">—</dd></div><div><dt>候选位置</dt><dd id="trace-candidates">—</dd></div><div><dt>比较字符</dt><dd id="trace-compared">—</dd></div><div><dt>已剪枝</dt><dd id="trace-pruned">—</dd></div></dl></div>
         <div class="inspector-section mismatch-section"><div class="section-label-row"><span class="section-label">错配碱基</span><label class="mini-toggle"><input id="mismatch-toggle" type="checkbox" checked><span>显示</span></label></div><div class="mismatch-list" id="mismatch-list"></div></div>

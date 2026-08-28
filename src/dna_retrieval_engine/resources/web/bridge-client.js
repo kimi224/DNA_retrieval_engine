@@ -6,6 +6,8 @@
   let latestState = null;
   let latestStateSignature = "";
   let latestRunId = null;
+  let refreshInFlight = false;
+  let connectInFlight = false;
 
   function dispatch(name, detail) {
     window.dispatchEvent(new CustomEvent(name, { detail: detail }));
@@ -35,20 +37,30 @@
   }
 
   async function refreshState() {
-    const state = await callDesktopApi("get_state");
-    connected = true;
-    latestState = state;
-    const signature = JSON.stringify(state);
-    if (signature !== latestStateSignature) {
-      latestStateSignature = signature;
-      dispatch("dna:state", state);
+    // pywebview serializes bridge work; never pile up overlapping polling
+    // calls when a slow disk/index operation takes longer than the interval.
+    if (refreshInFlight) return latestState;
+    refreshInFlight = true;
+    try {
+      const state = await callDesktopApi("get_state");
+      connected = true;
+      latestState = state;
+      const signature = JSON.stringify(state);
+      if (signature !== latestStateSignature) {
+        latestStateSignature = signature;
+        dispatch("dna:state", state);
+      }
+      await refreshResult(false);
+      return state;
+    } finally {
+      refreshInFlight = false;
     }
-    await refreshResult(false);
-    return state;
   }
 
   async function connectBridge() {
+    if (connectInFlight) return false;
     if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.get_state) return false;
+    connectInFlight = true;
     try {
       await refreshState();
       dispatch("dna:bridge", { ready: true });
@@ -56,6 +68,8 @@
     } catch (error) {
       dispatch("dna:error", { message: error.message || String(error) });
       return false;
+    } finally {
+      connectInFlight = false;
     }
   }
 
@@ -86,8 +100,12 @@
       if (!connected) dispatch("dna:bridge", { ready: false });
     }
   }, 100);
-  window.setInterval(function () {
-    if (connected) refreshState().catch(function () { connected = false; });
-    else connectBridge();
-  }, 500);
+  function pollState() {
+    window.setTimeout(function () {
+      if (connected) refreshState().catch(function () { connected = false; });
+      else connectBridge();
+      pollState();
+    }, 500);
+  }
+  pollState();
 }());

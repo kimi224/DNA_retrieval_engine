@@ -4,7 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from dna_retrieval_engine.config import DEFAULT_K
+from dna_retrieval_engine.config import DEFAULT_K, K_MAX, K_MIN, MISMATCH_MAX, MISMATCH_MIN
 from dna_retrieval_engine.services.dataset_generator import DatasetGenerator
 from dna_retrieval_engine.services.dataset_service import DatasetService
 from dna_retrieval_engine.services.report_service import ReportService
@@ -27,7 +27,12 @@ class DesktopApi:
 
     def _push_task_state(self, task_state: dict[str, Any]) -> None:
         if self.window is not None:
-            self.window.evaluate_js(task_event_script(task_state))
+            # A window can close while a daemon worker is finishing.  UI push
+            # is best-effort; polling get_state() remains authoritative.
+            try:
+                self.window.evaluate_js(task_event_script(task_state))
+            except Exception:
+                pass
 
     @staticmethod
     def _response(action: Callable[[], Any]) -> dict[str, Any]:
@@ -137,17 +142,35 @@ class DesktopApi:
         )
 
     def start_build_index(self, k: int) -> dict[str, Any]:
+        if self.datasets.current is None:
+            return {"ok": False, "error": "请先生成或加载数据集"}
+        try:
+            k = int(k)
+        except (TypeError, ValueError):
+            return {"ok": False, "error": f"K-mer 长度必须为 {K_MIN}-{K_MAX}"}
+        if not K_MIN <= k <= K_MAX:
+            return {"ok": False, "error": f"K-mer 长度必须为 {K_MIN}-{K_MAX}"}
+
         def worker(context: TaskContext) -> dict[str, Any]:
             context.update(20, "正在滑动参考序列窗口")
-            result = self.search.build_index(int(k))
+            result = self.search.build_index(k)
             context.update(90, "正在校验节点数与窗口数")
             return result
 
         return self.tasks.start("build_index", worker)
 
     def start_search(self, options: dict[str, Any]) -> dict[str, Any]:
-        k = int(options.get("k", DEFAULT_K))
-        mismatches = int(options.get("max_mismatches", 2))
+        if self.datasets.current is None:
+            return {"ok": False, "error": "请先生成或加载数据集"}
+        try:
+            k = int(options.get("k", DEFAULT_K))
+            mismatches = int(options.get("max_mismatches", 2))
+        except (TypeError, ValueError):
+            return {"ok": False, "error": "检索参数格式无效"}
+        if not K_MIN <= k <= K_MAX:
+            return {"ok": False, "error": f"K-mer 长度必须为 {K_MIN}-{K_MAX}"}
+        if not MISMATCH_MIN <= mismatches <= MISMATCH_MAX:
+            return {"ok": False, "error": f"最大错配数必须为 {MISMATCH_MIN}-{MISMATCH_MAX}"}
         early_prune = bool(options.get("early_prune", True))
 
         def worker(context: TaskContext) -> dict[str, Any]:
@@ -182,6 +205,8 @@ class DesktopApi:
         output = str(options.get("output_directory", "")).strip()
         if not output:
             return {"ok": False, "error": "请选择报告导出目录"}
+        if self.search.last_result() is None:
+            return {"ok": False, "error": "尚未完成检索，无法导出报告"}
 
         def worker(context: TaskContext) -> dict[str, Any]:
             context.update(35, "正在生成 JSON 与 CSV 报告")

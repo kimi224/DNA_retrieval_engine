@@ -2,6 +2,7 @@
 
 from time import perf_counter
 
+from dna_retrieval_engine.config import MISMATCH_MAX
 from dna_retrieval_engine.models import Hit, Mismatch, ReadRecord, ReadSearchResult
 
 from .kmer_index import KmerIndex
@@ -23,8 +24,8 @@ class TolerantMatcher:
     ) -> ReadSearchResult:
         if len(read.sequence) < self.index.k:
             raise ValueError(f"{read.id} 长度小于 K-mer 长度")
-        if max_mismatches < 0:
-            raise ValueError("最大错配数不能为负数")
+        if not 0 <= max_mismatches <= MISMATCH_MAX:
+            raise ValueError(f"最大错配数必须为 0-{MISMATCH_MAX}")
         started = perf_counter()
         seed = read.sequence[: self.index.k]
         bucket = self.index.table.bucket_index(seed)
@@ -50,6 +51,7 @@ class TolerantMatcher:
                 continue
 
             mismatch_items: list[Mismatch] = []
+            exceeded_threshold = False
             pruned = False
             for offset, read_base in enumerate(read.sequence):
                 result.compared_base_count += 1
@@ -64,18 +66,31 @@ class TolerantMatcher:
                         )
                     )
                     if early_prune and len(mismatch_items) > max_mismatches:
-                        result.pruned_candidate_count += 1
-                        pruned = True
-                        break
+                        # Continue only until the supported display ceiling so
+                        # a rejected 1-3 mismatch Read still has a full trace.
+                        if not exceeded_threshold:
+                            result.pruned_candidate_count += 1
+                            exceeded_threshold = True
+                        if len(mismatch_items) > MISMATCH_MAX:
+                            pruned = True
+                            break
+            candidate_hit = Hit(
+                start_0=start,
+                read_length=len(read.sequence),
+                hamming_distance=len(mismatch_items),
+                mismatches=tuple(mismatch_items),
+            )
             if not pruned and len(mismatch_items) <= max_mismatches:
                 result.hits.append(
-                    Hit(
-                        start_0=start,
-                        read_length=len(read.sequence),
-                        hamming_distance=len(mismatch_items),
-                        mismatches=tuple(mismatch_items),
-                    )
+                    candidate_hit
                 )
+            elif len(mismatch_items) <= MISMATCH_MAX:
+                nearest = result.nearest_hit
+                if nearest is None or (candidate_hit.hamming_distance, candidate_hit.start_0) < (
+                    nearest.hamming_distance,
+                    nearest.start_0,
+                ):
+                    result.nearest_hit = candidate_hit
             candidate_node = candidate_node.next
         result.hits.sort(key=lambda item: (item.hamming_distance, item.start_0))
         result.elapsed_ms = (perf_counter() - started) * 1000

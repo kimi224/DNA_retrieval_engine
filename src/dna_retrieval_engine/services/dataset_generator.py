@@ -96,7 +96,11 @@ class DatasetGenerator:
             read_lengths = [
                 rng.randint(READ_LENGTH_MIN, READ_LENGTH_MAX) for _ in range(READ_COUNT)
             ]
-            mismatch_counts = [value for value in range(5) for _ in range(READ_COUNT // 5)]
+            # Sample each Read independently.  Seed one Read in each class so
+            # every report has all four categories, then shuffle the complete
+            # list.  Counts remain reproducible for a seed without the old
+            # fixed 10/10/10/10/10 allocation.
+            mismatch_counts = list(range(4)) + [rng.randint(0, 3) for _ in range(READ_COUNT - 4)]
             rng.shuffle(mismatch_counts)
             generated: list[tuple[ReadRecord, dict[str, Any]]] = []
             for index in range(READ_COUNT):
@@ -156,7 +160,7 @@ class DatasetGenerator:
                     "reference_length": length,
                     "read_count": READ_COUNT,
                     "read_length_range": [READ_LENGTH_MIN, READ_LENGTH_MAX],
-                    "mismatch_range": [0, 4],
+                    "mismatch_range": [0, 3],
                     "protected_prefix_length": PROTECTED_PREFIX_LENGTH,
                 },
                 "checksums": {
@@ -180,7 +184,7 @@ class DatasetGenerator:
             index = KmerIndex.build(GenomeBuffer(reference), PROTECTED_PREFIX_LENGTH)
             matcher = TolerantMatcher(index)
             for read, truth_item in generated:
-                result = matcher.search_read(read, 4, truth_start_0=truth_item["reference_start_0"])
+                result = matcher.search_read(read, 3, truth_start_0=truth_item["reference_start_0"])
                 if not any(hit.start_0 == truth_item["reference_start_0"] for hit in result.hits):
                     raise AssertionError(f"生成数据自检失败：{read.id} 未找回真实来源位置")
             return loaded

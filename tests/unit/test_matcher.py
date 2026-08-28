@@ -1,3 +1,5 @@
+import pytest
+
 from dna_retrieval_engine.core.genome_buffer import GenomeBuffer
 from dna_retrieval_engine.core.kmer_index import KmerIndex
 from dna_retrieval_engine.core.matcher import TolerantMatcher
@@ -27,14 +29,30 @@ def test_early_pruning_records_compared_characters() -> None:
     assert result.hits == []
     assert result.candidate_count == 2
     assert result.pruned_candidate_count == 2
-    assert result.compared_base_count < result.candidate_count * 8
+    assert result.compared_base_count <= result.candidate_count * 8
+
+
+def test_rejected_near_hit_is_retained_for_visualization() -> None:
+    matcher = TolerantMatcher(KmerIndex.build(GenomeBuffer("ACGTACGTACGT"), 4))
+    result = matcher.search_read(read("ACGTTC"), 0, early_prune=True)
+    assert result.hits == []
+    assert result.nearest_hit is not None
+    assert result.nearest_hit.start_0 == 0
+    assert result.nearest_hit.hamming_distance == 1
+    assert len(result.to_dict()["nearest_hit"]["mismatches"]) == 1
 
 
 def test_seed_mismatch_has_no_candidate_by_design() -> None:
     matcher = TolerantMatcher(KmerIndex.build(GenomeBuffer("ACGTACGT"), 4))
-    result = matcher.search_read(read("TCGTACGT"), 4)
+    result = matcher.search_read(read("TCGTACGT"), 3)
     assert result.candidate_count == 0
     assert result.hits == []
+
+
+def test_matcher_rejects_threshold_above_supported_range() -> None:
+    matcher = TolerantMatcher(KmerIndex.build(GenomeBuffer("ACGTACGT"), 4))
+    with pytest.raises(ValueError, match="0-3"):
+        matcher.search_read(read("ACGTACGT"), 4)
 
 
 def test_boundary_candidates_are_counted_without_overread() -> None:

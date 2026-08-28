@@ -7,6 +7,20 @@
   const nodes = function (selector) { return Array.from(document.querySelectorAll(selector)); };
   const formatNumber = function (value) { return Number(value || 0).toLocaleString("zh-CN"); };
   const fileName = function (path) { return path ? path.split(/[\\/]/).pop() : "—"; };
+  const displayHit = function (read) { return read && (read.best_hit || read.nearest_hit) || null; };
+
+  function bridgeReady() {
+    return Boolean(state.app && state.app.bridge_ready);
+  }
+
+  function taskRunning() {
+    return Boolean(state.app && state.app.task && state.app.task.status === "running");
+  }
+
+  function lockPageActions() {
+    const locked = !bridgeReady() || taskRunning();
+    nodes(".page-actions button").forEach(function (button) { button.disabled = locked; });
+  }
 
   function refreshIcons() {
     if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
@@ -35,6 +49,7 @@
 
   async function startTask(method, payload) {
     try {
+      if (!bridgeReady() || taskRunning()) throw new Error("当前任务尚未结束，请稍后重试");
       const response = await window.DnaBridge.call(method, payload);
       if (!response.ok) throw new Error(response.error);
       await window.DnaBridge.refreshState();
@@ -46,7 +61,9 @@
     const index = state.app && state.app.index && state.app.index.built ? state.app.index : null;
     const task = state.app && state.app.task;
     const rebuild = node("#rebuild-index-button");
-    if (rebuild) rebuild.disabled = !data || (task && task.status === "running");
+    if (rebuild) rebuild.disabled = !data || !bridgeReady() || (task && task.status === "running");
+    const refresh = node("#refresh-index-button");
+    if (refresh) refresh.disabled = !data || !bridgeReady() || Boolean(task && task.status === "running");
     setText("#index-side-reference", data ? "连续字符数组 · " + formatNumber(data.reference_length) + " bp" : "连续字符数组 · 等待数据");
     setText("#index-k", index ? index.k : "—");
     setText("#index-windows", index ? formatNumber(index.window_count) : "0");
@@ -81,7 +98,7 @@
   }
 
   function initIndexPage() {
-    node("#refresh-index-button").addEventListener("click", function () { window.DnaBridge.refreshState().then(function () { toast("索引状态已同步"); }).catch(function (error) { toast(error.message); }); });
+    node("#refresh-index-button").addEventListener("click", function () { if (!bridgeReady() || taskRunning()) return; window.DnaBridge.refreshState().then(function () { toast("索引状态已同步"); }).catch(function (error) { toast(error.message); }); });
     node("#rebuild-index-button").addEventListener("click", function () {
       const index = state.app && state.app.index;
       startTask("start_build_index", index && index.built ? index.k : 6);
@@ -98,7 +115,7 @@
 
     const filter = document.createElement("label");
     filter.className = "reads-filter-select";
-    filter.innerHTML = '<span>筛选</span><select aria-label="Reads 结果筛选"><option value="all">全部 Reads</option><option value="matched">仅命中</option><option value="unmatched">仅未命中</option><option value="h0">0 个错配</option><option value="h1">1 个错配</option><option value="h2">2 个错配</option><option value="h3">3 个错配</option><option value="h4">4 个错配</option></select>';
+    filter.innerHTML = '<span>筛选</span><select aria-label="Reads 结果筛选"><option value="all">全部 Reads</option><option value="matched">仅命中</option><option value="unmatched">仅未命中</option><option value="h0">0 个错配</option><option value="h1">1 个错配</option><option value="h2">2 个错配</option><option value="h3">3 个错配</option></select>';
     toolbar.insertBefore(filter, note);
 
     const sort = document.createElement("div");
@@ -121,8 +138,9 @@
     function filteredReads() {
       const query = view.query.toLowerCase();
       return resultReads().filter(function (read) {
-        const hamming = read.best_hit && read.best_hit.hamming_distance;
-        const statusMatch = view.filter === "all" || (view.filter === "matched" && read.matched) || (view.filter === "unmatched" && !read.matched) || (view.filter.charAt(0) === "h" && read.matched && hamming === Number(view.filter.slice(1)));
+        const best = displayHit(read);
+        const hamming = best && best.hamming_distance;
+        const statusMatch = view.filter === "all" || (view.filter === "matched" && read.matched) || (view.filter === "unmatched" && !read.matched) || (view.filter.charAt(0) === "h" && hamming === Number(view.filter.slice(1)));
         return statusMatch && (!query || (read.id + read.sequence + read.seed).toLowerCase().includes(query));
       }).sort(function (left, right) {
         if (view.sort === "id") return left.id.localeCompare(right.id, undefined, { numeric: true });
@@ -131,7 +149,8 @@
     }
 
     function sequenceMarkup(read) {
-      const mismatchOffsets = read.best_hit ? read.best_hit.mismatches.map(function (item) { return item.read_offset_0; }) : [];
+      const best = displayHit(read);
+      const mismatchOffsets = best ? best.mismatches.map(function (item) { return item.read_offset_0; }) : [];
       const visible = read.sequence.slice(0, 52);
       const html = visible.split("").map(function (base, offset) { return mismatchOffsets.includes(offset) ? '<span class="mismatch-char">' + base + "</span>" : base; }).join("");
       return html + (read.sequence.length > visible.length ? "…" : "");
@@ -165,15 +184,16 @@
       body.classList.toggle("is-reordering", Boolean(animateRows));
       if (!pageReads.length) body.innerHTML = '<tr><td colspan="6">' + (state.result ? "没有符合筛选条件的 Reads" : "请先在运行工作台完成检索") + "</td></tr>";
       pageReads.forEach(function (read, rowIndex) {
-        const best = read.best_hit;
-        const resultText = !best ? "未命中" : (best.hamming_distance === 0 ? "完全一致" : "容错命中");
-        const pillClass = !best ? " rejected" : (best.hamming_distance === 0 ? " exact" : "");
+        const best = displayHit(read);
+        const accepted = Boolean(read.best_hit);
+        const resultText = !accepted ? (best ? "匹配失败" : "未命中") : (best.hamming_distance === 0 ? "完全一致" : "容错命中");
+        const pillClass = !accepted ? " rejected" : (best.hamming_distance === 0 ? " exact" : "");
         const row = document.createElement("tr");
         row.dataset.read = read.id;
         row.tabIndex = 0;
         row.style.setProperty("--row-index", rowIndex);
         row.title = "点击回到工作台定位 " + read.id;
-        row.innerHTML = '<td>' + read.id + '</td><td><span class="read-string" title="' + read.sequence + '">' + sequenceMarkup(read) + '</span></td><td><code>' + read.seed + '</code></td><td>' + (best ? best.start_1 + (read.hits.length > 1 ? "（" + read.hits.length + " 个命中）" : "") : "未命中") + '</td><td>' + (best ? best.hamming_distance + " / " + state.result.parameters.max_mismatches : "—") + '</td><td><span class="result-pill' + pillClass + '">' + resultText + "</span></td>";
+        row.innerHTML = '<td>' + read.id + '</td><td><span class="read-string" title="' + read.sequence + '">' + sequenceMarkup(read) + '</span></td><td><code>' + read.seed + '</code></td><td>' + (best ? best.start_1 + (accepted && read.hits.length > 1 ? "（" + read.hits.length + " 个命中）" : "") : "未命中") + '</td><td>' + (best ? best.hamming_distance + " / " + state.result.parameters.max_mismatches : "—") + '</td><td><span class="result-pill' + pillClass + '">' + resultText + "</span></td>";
         const open = function () { sessionStorage.setItem("selected_read_id", read.id); location.href = "../index.html"; };
         row.addEventListener("click", open);
         row.addEventListener("keydown", function (event) { if (event.key === "Enter" || event.key === " ") open(); });
@@ -196,7 +216,7 @@
         render(true);
       });
     });
-    node("#go-import-button").addEventListener("click", function () { sessionStorage.setItem("open_input_mode", "import"); location.href = "../index.html"; });
+    node("#go-import-button").addEventListener("click", function () { if (taskRunning() || !bridgeReady()) return; sessionStorage.setItem("open_input_mode", "import"); location.href = "../index.html"; });
     node("#export-reads-button").addEventListener("click", exportReport);
     state.renderReads = render;
     render();
@@ -208,12 +228,14 @@
     setText("#reads-side-summary", data ? data.read_count + " 条 Reads · 平均 " + data.average_read_length + " bp" : "尚未加载 Reads");
     setText("#reads-side-result", summary ? summary.matched_read_count + " 条命中 · " + summary.unmatched_read_count + " 条未命中" : "运行检索后显示结果");
     setText("#reads-result-pill", summary ? summary.matched_read_count + " 条命中" : "0 条命中");
-    node("#export-reads-button").disabled = !state.result;
+    node("#go-import-button").disabled = !bridgeReady() || taskRunning();
+    node("#export-reads-button").disabled = !state.result || !bridgeReady() || taskRunning();
     if (state.renderReads) state.renderReads();
   }
 
   async function exportReport() {
     try {
+      if (!bridgeReady() || taskRunning()) throw new Error("当前任务尚未结束，请稍后重试");
       const selected = await window.DnaBridge.call("choose_export_directory");
       if (!selected.ok) throw new Error(selected.error);
       if (!selected.cancelled) await startTask("start_export_results", { output_directory: selected.path });
@@ -228,7 +250,7 @@
     setText("#report-run-id", result ? result.run_id : "尚未完成检索");
     setText("#report-hits", summary ? summary.matched_read_count + " / " + summary.read_count : "0 / 0");
     setText("#report-rate", summary ? summary.match_rate.toFixed(1) + "% · " + summary.unmatched_read_count + " 条未命中" : "等待检索");
-    setText("#report-threshold", parameters ? parameters.max_mismatches + " bp" : "—");
+    setText("#report-threshold", parameters ? parameters.max_mismatches + " 个错配" : "—");
     setText("#report-candidates", summary ? formatNumber(summary.candidate_count) : "0");
     setText("#report-elapsed", summary ? Number(summary.elapsed_ms).toFixed(3) + " ms" : "0 ms");
     setText("#report-k", parameters ? "本地 · K=" + parameters.k : "本地 · 等待运行");
@@ -243,14 +265,19 @@
     setText("#method-compare", summary ? "比较 " + formatNumber(summary.compared_base_count) + " 个字符，提前剪枝 " + formatNumber(summary.pruned_candidate_count) + " 个候选。" : "逐字符计算汉明距离，超过阈值即剪枝。");
     const distribution = node("#report-distribution");
     if (distribution) {
-      const values = summary ? summary.mismatch_distribution : [0, 0, 0, 0, 0];
-      const maximum = Math.max(1, Math.max.apply(null, values));
+      const values = summary ? summary.mismatch_distribution : [0, 0, 0, 0];
+      const totalReads = summary ? summary.read_count : 0;
       Array.from(distribution.children).forEach(function (item, index) {
-        item.querySelector(".distribution-bar span").style.height = values[index] / maximum * 100 + "%";
-        item.querySelector("strong").textContent = values[index];
+        const count = values[index] || 0;
+        const percentage = totalReads ? count / totalReads * 100 : 0;
+        item.querySelector(".distribution-bar span").style.height = percentage + "%";
+        item.querySelector(".distribution-bar").setAttribute("aria-label", count + " 条，占 " + percentage.toFixed(1) + "%");
+        item.querySelector("strong").textContent = count;
+        item.querySelector("small").textContent = index + " 个错配 · " + percentage.toFixed(1) + "%";
       });
     }
-    node("#export-report-button").disabled = !result;
+    node("#print-report-button").disabled = !result || !bridgeReady() || taskRunning();
+    node("#export-report-button").disabled = !result || !bridgeReady() || taskRunning();
   }
 
   function initReportPage() {
@@ -260,6 +287,7 @@
 
   function render() {
     setCommonState();
+    lockPageActions();
     if (page === "index-state.html") renderIndexPage();
     else if (page === "reads.html") renderReadsPage();
     else if (page === "report.html") renderReportPage();
