@@ -1,6 +1,7 @@
 """Business limits shared by parsers, services, and the desktop bridge."""
 
 APP_NAME = "NEXUS DNA Retrieval Engine"
+APP_VERSION = "2.0.0"
 REFERENCE_LENGTH_MIN = 2_000
 REFERENCE_LENGTH_MAX = 5_000
 READ_COUNT = 50
