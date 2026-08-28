@@ -1,5 +1,7 @@
 # 架构与算法说明
 
+版本：v2.0
+
 ## 数据流
 
 ```text
@@ -52,6 +54,8 @@ BatchResult -> pywebview Bridge / CLI -> 四页同步展示 / JSON+CSV
 
 ## 前后端状态
 
-`DatasetService`、`SearchService` 和 `TaskController` 各自持有线程安全状态。`DesktopApi` 只做参数转换、原生对话框和后台任务调度。`start_*` 立即返回任务 ID；任务通过 `evaluate_js` 推送，同时前端每 500 ms 调用 `get_state()` 兜底。
+`DatasetService`、`SearchService` 和 `TaskController` 各自持有线程安全状态。`DesktopApi` 只做参数转换、原生对话框和后台任务调度。`start_*` 立即返回任务 ID；后台线程不直接操作 WebView，前端通过单飞轮询 `get_state()` 读取任务状态。pywebview 使用绝对本地资源路径启动内置 HTTP Server，页面在 `pywebviewready` 后才调用 API。
+
+`get_state()` 同时返回 `capabilities` 权限矩阵。前端 `ui-state.js` 只负责把该矩阵映射成控件状态，不自行推断后端是否允许执行；后端仍会对所有 `start_*` 入口做最终校验。这样无数据、桥接未就绪、任务运行中和检索完成四种状态不会互相覆盖。
 
 四个页面不保存业务结果。`bridge-client.js` 恢复 Python 状态，`state-store.js` 在当前页面分发，页面脚本只保留筛选、分页、缩放和当前 Read 等视图状态。
