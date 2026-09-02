@@ -180,3 +180,18 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Course deliverables and presentation materials (not distributed with the repository)
+课程设计.md
+课程设计.txt
+*播音稿*
+*课程设计*报告*
+数据结构课程设计总结报告.pdf
+
+# Runtime / debugging artifacts
+output/
+.coverage.*
+
+# AI assistant and browser automation scratch data
+.playwright-cli/
+.workbuddy/
